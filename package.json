@@ -1,0 +1,37 @@
+{
+  "name": "boxman-jr",
+  "version": "0.1.0",
+  "description": "A friendly Sokoban-style box-pushing puzzle game for kids, right in your terminal.",
+  "type": "module",
+  "bin": {
+    "boxman-jr": "dist/main.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist",
+    "levels",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc -p tsconfig.test.json && node --test dist-test/test/*.test.js",
+    "start": "npm run build && node dist/main.js",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "sokoban",
+    "puzzle",
+    "game",
+    "terminal",
+    "cli",
+    "kids"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  }
+}

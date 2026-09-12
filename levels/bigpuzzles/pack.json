@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "id": "bigpuzzles",
+  "name": "Big Puzzles",
+  "author": "boxman-jr",
+  "order": 3,
+  "unlockAfter": "warehouse",
+  "levels": [
+    {
+      "id": "b01",
+      "file": "b01.sok",
+      "title": "Stretch Your Brain"
+    },
+    {
+      "id": "b02",
+      "file": "b02.sok",
+      "title": "Four Crates"
+    },
+    {
+      "id": "b03",
+      "file": "b03.sok",
+      "title": "The Workshop"
+    },
+    {
+      "id": "b04",
+      "file": "b04.sok",
+      "title": "Heavy Lifting"
+    },
+    {
+      "id": "b05",
+      "file": "b05.sok",
+      "title": "The Depot"
+    },
+    {
+      "id": "b06",
+      "file": "b06.sok",
+      "title": "Twists"
+    },
+    {
+      "id": "b07",
+      "file": "b07.sok",
+      "title": "The Yard"
+    },
+    {
+      "id": "b08",
+      "file": "b08.sok",
+      "title": "Loading Bay"
+    },
+    {
+      "id": "b09",
+      "file": "b09.sok",
+      "title": "Crate Chaos"
+    },
+    {
+      "id": "b10",
+      "file": "b10.sok",
+      "title": "The Long Haul"
+    },
+    {
+      "id": "b11",
+      "file": "b11.sok",
+      "title": "Stacked Up"
+    },
+    {
+      "id": "b12",
+      "file": "b12.sok",
+      "title": "The Warehouse Floor"
+    },
+    {
+      "id": "b13",
+      "file": "b13.sok",
+      "title": "Tricky Business"
+    },
+    {
+      "id": "b14",
+      "file": "b14.sok",
+      "title": "Round the Houses"
+    },
+    {
+      "id": "b15",
+      "file": "b15.sok",
+      "title": "The Sorting Room"
+    },
+    {
+      "id": "b16",
+      "file": "b16.sok",
+      "title": "Pile Up"
+    },
+    {
+      "id": "b17",
+      "file": "b17.sok",
+      "title": "The Puzzle Yard"
+    },
+    {
+      "id": "b18",
+      "file": "b18.sok",
+      "title": "Four Corners"
+    },
+    {
+      "id": "b19",
+      "file": "b19.sok",
+      "title": "Deep Thought"
+    },
+    {
+      "id": "b20",
+      "file": "b20.sok",
+      "title": "The Big Shuffle"
+    },
+    {
+      "id": "b21",
+      "file": "b21.sok",
+      "title": "Mind Bender"
+    },
+    {
+      "id": "b22",
+      "file": "b22.sok",
+      "title": "The Storehouse"
+    },
+    {
+      "id": "b23",
+      "file": "b23.sok",
+      "title": "Careful Planning"
+    },
+    {
+      "id": "b24",
+      "file": "b24.sok",
+      "title": "The Final Stretch"
+    },
+    {
+      "id": "b25",
+      "file": "b25.sok",
+      "title": "Crate Expectations"
+    },
+    {
+      "id": "b26",
+      "file": "b26.sok",
+      "title": "The Last Room"
+    },
+    {
+      "id": "b27",
+      "file": "b27.sok",
+      "title": "Well Planned"
+    },
+    {
+      "id": "b28",
+      "file": "b28.sok",
+      "title": "Top Marks"
+    },
+    {
+      "id": "b29",
+      "file": "b29.sok",
+      "title": "Puzzle Champion"
+    },
+    {
+      "id": "b30",
+      "file": "b30.sok",
+      "title": "The Grand Depot"
+    },
+    {
+      "id": "b31",
+      "file": "b31.sok",
+      "title": "Master Mover"
+    },
+    {
+      "id": "b32",
+      "file": "b32.sok",
+      "title": "Champion!"
+    }
+  ]
+}
