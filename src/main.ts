@@ -10,7 +10,12 @@ import { flatten, loadPacks, type Pack } from './io/packs.js';
 import { loadProgress, saveProgress, progressPath } from './io/store.js';
 import { resumeIndex } from './core/progress.js';
 import { enterGameMode, out, restore, terminalSize, ansi } from './io/term.js';
-import { detectCaps, type ColorMode, type GlyphMode } from './render/caps.js';
+import {
+  detectCaps,
+  isPixelMode,
+  type ColorMode,
+  type GlyphMode,
+} from './render/caps.js';
 import { paint } from './render/color.js';
 import { theme } from './render/theme.js';
 import { Framebuffer } from './render/framebuffer.js';
@@ -21,6 +26,8 @@ interface Args {
   ascii: boolean;
   noBlocks: boolean;
   blocks: boolean;
+  halfBlocks: boolean;
+  noCoach: boolean;
   color?: ColorMode;
   levels?: string;
   selftest: boolean;
@@ -35,6 +42,8 @@ function parseArgs(argv: string[]): Args {
     ascii: false,
     noBlocks: false,
     blocks: false,
+    halfBlocks: false,
+    noCoach: false,
     selftest: false,
     help: false,
     version: false,
@@ -46,6 +55,8 @@ function parseArgs(argv: string[]): Args {
     if (arg === '--ascii') args.ascii = true;
     else if (arg === '--blocks=off') args.noBlocks = true;
     else if (arg === '--blocks=on' || arg === '--pixel-art') args.blocks = true;
+    else if (arg === '--half-blocks') args.halfBlocks = true;
+    else if (arg === '--no-coach') args.noCoach = true;
     else if (arg.startsWith('--color=')) {
       args.color = arg.slice(8) as ColorMode;
     } else if (arg.startsWith('--levels=')) args.levels = arg.slice(9);
@@ -69,7 +80,9 @@ boxman-jr - a friendly crate-pushing puzzle game for kids
 Options
   --ascii              use plain ASCII instead of pixel art
   --pixel-art          force pixel art back on (same as --blocks=on)
-  --blocks=off         keep colour, but no half-block graphics
+  --blocks=off         keep colour, but no block graphics
+  --half-blocks        use the wider half-block renderer instead of quadrants
+  --no-coach           hide the coach and their hints
   --color=MODE         truecolor | ansi256 | ansi16 | ascii
   --levels=DIR         load level packs from your own directory
   --reset-graphics     forget the saved graphics choice, keeping puzzle progress
@@ -82,7 +95,7 @@ In game
   U or Backspace       undo - as much as you like
   R                    restart the puzzle
   Esc                  choose a puzzle
-  Q                    quit
+  Q or Ctrl+C          quit
 `;
 
 /**
@@ -191,6 +204,7 @@ async function main(): Promise<void> {
     forceColor: args.color,
     forceNoBlocks: args.noBlocks,
     forceBlocks: args.blocks,
+    forceHalfBlocks: args.halfBlocks,
     savedGlyphMode: progress.settings.glyphMode,
   });
 
@@ -201,8 +215,8 @@ async function main(): Promise<void> {
 
   // --pixel-art exists to undo a wrong answer we remembered, so remember the
   // correction too rather than making the player pass the flag forever.
-  if (args.blocks && progress.settings.glyphMode !== 'blocks') {
-    progress.settings.glyphMode = 'blocks';
+  if (args.blocks && progress.settings.glyphMode !== caps.glyphs) {
+    progress.settings.glyphMode = caps.glyphs;
     saveProgress(progress);
   }
 
@@ -210,7 +224,7 @@ async function main(): Promise<void> {
   // resize, and every bundled level is checked to fit at the minimum tile size.
   const { cols, rows } = terminalSize();
   const oversized = refs.filter((r) => !fitsAtMinimumTile(r.level, cols, rows));
-  if (oversized.length > 0 && caps.glyphs === 'blocks') {
+  if (oversized.length > 0 && isPixelMode(caps.glyphs)) {
     // Not fatal: the board renderer falls back to the smallest tile, and the
     // app shows a "make the window bigger" screen when it truly cannot fit.
   }
@@ -252,6 +266,8 @@ async function main(): Promise<void> {
     caps,
     startAt,
     recoveredFrom: loaded.recoveredFrom,
+    // --no-coach is a one-off; a remembered "off" is the standing preference.
+    coach: args.noCoach ? false : progress.settings.coach !== false,
   });
 
   app.run();

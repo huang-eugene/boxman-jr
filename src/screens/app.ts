@@ -17,6 +17,15 @@ import {
 } from '../core/game.js';
 import { findStuckBox } from '../core/deadlock.js';
 import {
+  coachLine,
+  HOLD_MOVES,
+  MANY_UNDOS,
+  outranks,
+  STALL_MOVES,
+  type CoachEvent,
+  type CoachLine,
+} from '../core/coach.js';
+import {
   recordPosition,
   recordSkip,
   recordWin,
@@ -28,9 +37,10 @@ import { saveProgress } from '../io/store.js';
 import type { LevelRef, Pack } from '../io/packs.js';
 import { readKeys, type Key } from '../io/keys.js';
 import { ansi, onResize, out, restore, terminalSize } from '../io/term.js';
-import type { Caps } from '../render/caps.js';
+import { isPixelMode, schemeFor, type Caps } from '../render/caps.js';
 import { BOLD, paint, RESET } from '../render/color.js';
 import { renderAscii } from '../render/ascii.js';
+import { Framebuffer } from '../render/framebuffer.js';
 import {
   chooseTileSize,
   chromeRows,
@@ -38,12 +48,17 @@ import {
   renderBoard,
   RESERVED_ROWS,
   TIGHT_ROWS,
+  tileCellCost,
 } from '../render/board.js';
-import { TILE_SIZES } from '../render/sprites.js';
+import { coachArt, TILE_SIZES } from '../render/sprites.js';
 import { theme } from '../render/theme.js';
 import {
+  bannerRow,
   centre,
+  keyTable,
   controlsLine,
+  overlayBanner,
+  speechBubble,
   statusLine,
   stuckLine,
   titleLine,
@@ -62,6 +77,8 @@ export interface AppOptions {
   caps: Caps;
   startAt: number;
   recoveredFrom?: string;
+  /** --no-coach, or a remembered preference. */
+  coach?: boolean;
 }
 
 export class App {
@@ -82,6 +99,17 @@ export class App {
 
   private selectCursor = 0;
   private lastWinWasBest = false;
+
+  /** Coach state: what is on screen, why, and when it may be replaced. */
+  private readonly coachEnabled: boolean;
+  private coachSaid: CoachLine | null = null;
+  private coachEvent: CoachEvent | null = null;
+  private coachSinceMove = 0;
+  private coachRotation = 0;
+  /** Crates home as of the previous move, to spot one landing or leaving. */
+  private lastDone = 0;
+  /** Move count when a crate last landed home, for the stall check. */
+  private lastProgressMove = 0;
   private stopKeys: (() => void) | null = null;
   private stopResize: (() => void) | null = null;
   private done = false;
@@ -94,6 +122,9 @@ export class App {
     this.index = opts.startAt;
     this.state = createState(this.refs[this.index].level);
     this.selectCursor = this.index;
+    this.coachEnabled = opts.coach ?? true;
+    this.lastDone = boxesOnGoals(this.state);
+    this.say('levelStart');
   }
 
   run(): void {
@@ -190,6 +221,7 @@ export class App {
       if (undo(this.state)) {
         this.undos++;
         this.refreshStuck();
+        this.observeMove();
         this.maybeOfferSkip();
       }
       return;
@@ -199,6 +231,9 @@ export class App {
       resetState(this.state);
       this.restarts++;
       this.stuckCell = -1;
+      this.lastDone = boxesOnGoals(this.state);
+      this.lastProgressMove = 0;
+      this.say('restart');
       this.maybeOfferSkip();
       return;
     }
@@ -215,6 +250,7 @@ export class App {
     }
 
     if (result.pushed) this.refreshStuck();
+    this.observeMove();
   }
 
   private onWonKey(key: Key): void {
@@ -270,6 +306,96 @@ export class App {
 
   /* -------------------------------------------------------------- flow --- */
 
+  /* ------------------------------------------------------------- coach --- */
+
+  /**
+   * Offer the coach an event. It may decline - a line already on screen holds
+   * for HOLD_MOVES unless something more urgent arrives, so a child reading
+   * slowly is never interrupted mid-sentence.
+   */
+  private say(event: CoachEvent): void {
+    if (!this.coachEnabled) return;
+
+    const held = this.state.moves - this.coachSinceMove < HOLD_MOVES;
+    if (this.coachSaid !== null && this.coachEvent !== null) {
+      if (held && !outranks(event, this.coachEvent)) return;
+      // Never repeat the same prompt back to back.
+      if (event === this.coachEvent) this.coachRotation++;
+    }
+
+    this.coachSaid = coachLine({
+      event,
+      done: boxesOnGoals(this.state),
+      goals: goalCount(this.state.level),
+      rotation: this.coachRotation,
+    });
+    this.coachEvent = event;
+    this.coachSinceMove = this.state.moves;
+  }
+
+  /**
+   * Watch a completed move for anything worth remarking on.
+   *
+   * Silence is the default: during fluent play - crates going home, no trouble -
+   * this returns without saying anything at all.
+   */
+  private observeMove(): void {
+    if (!this.coachEnabled) return;
+
+    const done = boxesOnGoals(this.state);
+
+    // A warning that has been acted on must go: leaving "that crate is stuck"
+    // up after the undo that fixed it tells the child the game did not notice.
+    if (this.stuckCell < 0 && this.coachEvent === 'stuck') {
+      this.coachSaid = null;
+      this.coachEvent = null;
+    }
+
+    if (this.stuckCell >= 0) {
+      this.say('stuck');
+    } else if (done > this.lastDone) {
+      this.lastProgressMove = this.state.moves;
+      // The last crate landing home is the win, which speaks for itself.
+      if (done < goalCount(this.state.level)) this.say('crateOnGoal');
+    } else if (done < this.lastDone) {
+      this.say('crateOffGoal');
+    } else if (this.undos >= MANY_UNDOS && this.undos % MANY_UNDOS === 0) {
+      this.say('manyUndos');
+    } else if (this.state.moves - this.lastProgressMove >= STALL_MOVES) {
+      this.lastProgressMove = this.state.moves;
+      this.say('stalled');
+    }
+
+    this.lastDone = done;
+  }
+
+  private hasCoach(): boolean {
+    return this.coachEnabled && this.coachSaid !== null;
+  }
+
+  /** The coach's bubble and sprite, as terminal rows. */
+  private coachLines(width: number, big: boolean): string[] {
+    if (!this.coachEnabled || this.coachSaid === null) return [];
+
+    const bubble = speechBubble(this.coachSaid.text, width, this.mode());
+    if (this.caps.glyphs === 'ascii') return bubble;
+
+    const art = big ? coachArt.large : coachArt.small;
+    const fb = new Framebuffer(art.w, art.h, theme.floor);
+    for (let y = 0; y < art.h; y++) {
+      for (let x = 0; x < art.w; x++) {
+        const rgb = art.px[y * art.w + x];
+        if (rgb !== null) fb.set(x, y, rgb);
+      }
+    }
+    const quad = schemeFor(this.caps.glyphs) === 'quad';
+    const sprite = quad
+      ? fb.renderQuadRows(this.mode())
+      : fb.renderRows(this.mode());
+
+    return [...bubble, ...sprite.map((l) => '  ' + l)];
+  }
+
   private refreshStuck(): void {
     this.stuckCell = findStuckBox(this.state);
   }
@@ -296,6 +422,7 @@ export class App {
       this.state.pushes,
     );
     this.save();
+    this.say('solved');
     this.screen = 'won';
   }
 
@@ -316,6 +443,12 @@ export class App {
     this.restarts = 0;
     this.undos = 0;
     this.skipOffered = false;
+    this.coachSaid = null;
+    this.coachEvent = null;
+    this.coachSinceMove = 0;
+    this.lastDone = boxesOnGoals(this.state);
+    this.lastProgressMove = 0;
+    this.say('levelStart');
     this.save();
   }
 
@@ -373,19 +506,85 @@ export class App {
 
   private mode = (): Caps['color'] => this.caps.color;
 
-  private boardLines(cols: number, rows: number): string[] {
+  private boardLines(
+    cols: number,
+    rows: number,
+  ): { lines: string[]; width: number } {
     const showStuck = this.stuckCell >= 0;
 
     if (this.caps.glyphs === 'ascii') {
       const lines = renderAscii(this.state, this.mode(), { showStuck });
-      return lines.map((l) => centre(l, cols));
+      const width = Math.max(...lines.map((l) => l.length));
+      return { lines, width };
     }
 
-    const tile = chooseTileSize(this.state.level, cols, rows);
+    const scheme = schemeFor(this.caps.glyphs);
+    const tile = chooseTileSize(this.state.level, cols, rows, scheme);
     const { fb } = renderBoard(this.state, tile, { showStuck });
-    // Centre by the pixel width, since the line is mostly escape codes.
-    const pad = Math.max(0, Math.floor((cols - this.state.level.width * tile) / 2));
-    return fb.renderRows(this.mode()).map((l) => ' '.repeat(pad) + l);
+    const quad = scheme === 'quad';
+
+    // The rendered CELL width, not the pixel width: under quadrants a cell is
+    // two pixels wide, and measuring in pixels would double-count.
+    const width = quad ? fb.quadCols : fb.width;
+    const painted = quad
+      ? fb.renderQuadRows(this.mode())
+      : fb.renderRows(this.mode());
+    return { lines: painted, width };
+  }
+
+  /**
+   * Put the coach beside the board when there is room, otherwise under it.
+   *
+   * Beside is strongly preferred: rows are what bind the tile size, so stacking
+   * the coach vertically would cost pixel resolution directly. The quadrant
+   * renderer halves the board's width, and this is what that width is for.
+   */
+  private composeBoard(
+    board: { lines: string[]; width: number },
+    cols: number,
+  ): { lines: string[]; coachBeside: boolean } {
+    const GAP = 2;
+    const bubbleW = Math.min(30, Math.max(18, cols - board.width - GAP - 2));
+    const coach =
+      board.width + GAP + bubbleW <= cols
+        ? this.coachLines(bubbleW, board.width >= 40)
+        : [];
+
+    if (coach.length === 0) {
+      // No room beside: centre the board alone and let the caller put a single
+      // coach line under the status row instead.
+      const pad = Math.max(0, Math.floor((cols - board.width) / 2));
+      return {
+        lines: board.lines.map((l) => ' '.repeat(pad) + l),
+        coachBeside: false,
+      };
+    }
+
+    const blockW = board.width + GAP + bubbleW;
+    const pad = ' '.repeat(Math.max(0, Math.floor((cols - blockW) / 2)));
+    const height = Math.max(board.lines.length, coach.length);
+    // Sit the coach block against the middle of the board rather than its top,
+    // so a short bubble does not float at the ceiling of a tall puzzle.
+    const coachTop = Math.max(
+      0,
+      Math.round((board.lines.length - coach.length) / 2),
+    );
+
+    const out: string[] = [];
+    for (let i = 0; i < height; i++) {
+      const left = board.lines[i];
+      const c = coach[i - coachTop];
+      if (left === undefined && c === undefined) continue;
+      let row = pad + (left ?? '');
+      if (c !== undefined) {
+        // Pad to the board's width in VISIBLE columns - the board line is
+        // mostly escapes, so its .length is not its width.
+        const used = left === undefined ? 0 : board.width;
+        row += ' '.repeat(Math.max(0, board.width - used) + GAP) + c;
+      }
+      out.push(row);
+    }
+    return { lines: out, coachBeside: true };
   }
 
   /**
@@ -401,9 +600,9 @@ export class App {
     const m = this.mode();
     const level = this.state.level;
     const min = TILE_SIZES[TILE_SIZES.length - 1];
-    const needCols = level.width * min + 2;
-    const needRows =
-      Math.ceil((level.height * min) / 2) + chromeRows(rows) + RESERVED_ROWS;
+    const need = tileCellCost(level, min, schemeFor(this.caps.glyphs));
+    const needCols = need.cols + 2;
+    const needRows = need.rows + chromeRows(rows) + RESERVED_ROWS;
 
     this.paintLines([
       '',
@@ -416,16 +615,36 @@ export class App {
       '',
       '',
       centre(
-        paint('Esc  choose a different puzzle      Q  quit', theme.textDim, m),
+        paint(
+          'Esc  choose a different puzzle      Q or Ctrl+C  quit',
+          theme.textDim,
+          m,
+        ),
         cols,
       ),
     ]);
   }
 
   private paintPlay(cols: number, rows: number): void {
-    if (this.caps.glyphs === 'blocks' && !fitsAtMinimumTile(this.state.level, cols, rows)) {
+    const lines = this.playLines(cols, rows);
+    if (lines === null) {
       this.paintTooBig(cols, rows);
       return;
+    }
+    this.paintLines(lines);
+  }
+
+  /**
+   * Build the play frame. Returns null when the level cannot fit, so callers
+   * can fall back to paintTooBig rather than overlaying onto a board that was
+   * never drawn.
+   */
+  private playLines(cols: number, rows: number): string[] | null {
+    if (
+      this.caps.glyphs !== 'ascii' &&
+      !fitsAtMinimumTile(this.state.level, cols, rows, schemeFor(this.caps.glyphs))
+    ) {
+      return null;
     }
 
     const ref = this.refs[this.index];
@@ -448,21 +667,34 @@ export class App {
     // what chooseTileSize budgets against, so the two must agree.
     const roomy = rows >= TIGHT_ROWS;
     const board = this.boardLines(cols, rows);
+    const composed = this.composeBoard(board, cols);
+    // The coach needs its own row only when it could not fit beside the board.
+    const coachInline = this.hasCoach() && !composed.coachBeside;
 
+    // These spacer rows are exactly what chromeRows() budgets for, so the two
+    // must stay in step: CHROME_ROWS counts title + status + controls + one
+    // spacer, CHROME_ROWS_TIGHT drops the spacer.
     const lines: string[] = [];
-    if (roomy) lines.push('');
     lines.push(titleLine(info, this.mode(), cols));
     if (roomy) lines.push('');
-    lines.push(...board);
+    lines.push(...composed.lines);
     if (roomy) lines.push('');
     lines.push(statusLine(info, this.mode(), cols));
-    lines.push(
-      this.stuckCell >= 0
-        ? stuckLine(this.mode(), cols)
-        : controlsLine(this.mode(), cols),
-    );
 
-    this.paintLines(lines);
+    // The coach absorbs the stuck warning: both want the same row and say the
+    // same thing, and two systems competing for one line is how you get a
+    // flicker between them.
+    if (coachInline && this.coachSaid !== null) {
+      lines.push(centre(paint(this.coachSaid.text, theme.textDim, this.mode()), cols));
+    } else {
+      lines.push(
+        this.stuckCell >= 0
+          ? stuckLine(this.mode(), cols)
+          : controlsLine(this.mode(), cols),
+      );
+    }
+
+    return lines;
   }
 
   private paintTitle(cols: number, rows: number): void {
@@ -510,7 +742,12 @@ export class App {
     lines.push('');
     lines.push(centre(paint('Press any key to play', theme.accent, m), cols));
     lines.push('');
-    lines.push(centre(paint('Esc  choose a puzzle      Q  quit', theme.textDim, m), cols));
+    lines.push(
+      centre(
+        paint('Esc  choose a puzzle      Q or Ctrl+C  quit', theme.textDim, m),
+        cols,
+      ),
+    );
 
     // The puzzles are not ours, and their licence asks that they stay credited.
     for (const credit of this.credits()) {
@@ -521,7 +758,10 @@ export class App {
     // Tile size is driven by how many ROWS the window has, so a player on a
     // default 80x24 terminal gets the coarsest art and no idea that a taller
     // window would give them the detailed version.
-    if (this.caps.glyphs === 'blocks' && chooseTileSize(ref.level, cols, rows) < 8) {
+    if (
+      isPixelMode(this.caps.glyphs) &&
+      chooseTileSize(ref.level, cols, rows, schemeFor(this.caps.glyphs)) < 8
+    ) {
       lines.push('');
       lines.push(
         centre(
@@ -548,34 +788,51 @@ export class App {
     this.paintLines(lines);
   }
 
+  /**
+   * The congratulation, printed OVER the finished board.
+   *
+   * The board stays on screen because the picture the child just solved is the
+   * reward - every crate drawn with `crateDone` - and replacing it with a card
+   * threw that away at the exact moment it mattered. Any key still advances.
+   *
+   * Falls back to a full-screen card when the level does not fit the window,
+   * since there is no board underneath to overlay onto.
+   */
   private paintWon(cols: number, rows: number): void {
-    const m = this.mode();
-    const stars = this.starsFor();
+    const banner = this.winBanner(cols);
+    const frame = this.playLines(cols, rows);
 
-    const lines: string[] = ['', ''];
-    lines.push(centre(BOLD + paint('WELL DONE!', theme.good, m) + RESET, cols));
-    lines.push('');
-    lines.push(centre(paint(stars, theme.accent, m), cols));
-    lines.push('');
+    if (frame === null) {
+      this.paintLines(this.winCard(cols));
+      return;
+    }
+
+    this.paintLines(overlayBanner(frame, banner, bannerRow(frame.length, banner.length)));
+  }
+
+  /** The congratulation lines, shared by the overlay and the fallback card. */
+  private winBanner(cols: number): string[] {
+    const m = this.mode();
     const moves = this.state.moves;
-    lines.push(
+    const more = this.index + 1 < this.refs.length;
+
+    const lines = [
+      centre(BOLD + paint('WELL DONE!', theme.good, m) + RESET, cols),
+      centre(paint(this.starsFor(), theme.accent, m), cols),
       centre(
         paint(
-          `${this.refs[this.index].level.title} solved in ${moves} ` +
-            `${moves === 1 ? 'move' : 'moves'}`,
+          `Solved in ${moves} ${moves === 1 ? 'move' : 'moves'}`,
           theme.text,
           m,
         ),
         cols,
       ),
-    );
+    ];
+
     if (this.lastWinWasBest) {
-      lines.push('');
       lines.push(centre(paint('A new personal best!', theme.accent, m), cols));
     }
-    lines.push('');
-    lines.push('');
-    const more = this.index + 1 < this.refs.length;
+
     lines.push(
       centre(
         paint(
@@ -587,7 +844,12 @@ export class App {
       ),
     );
 
-    this.paintLines(lines);
+    return lines;
+  }
+
+  /** Full-screen win card, for when the board could not be drawn. */
+  private winCard(cols: number): string[] {
+    return ['', '', ...this.winBanner(cols)];
   }
 
   /**
@@ -671,11 +933,18 @@ export class App {
       '',
       centre('Push every crate onto a marked spot.', cols),
       '',
-      centre(`${k('Arrow keys')} or ${k('W A S D')}   move`, cols),
-      centre(`${k('U')} or ${k('Backspace')}        undo (as much as you like!)`, cols),
-      centre(`${k('R')}                     start this puzzle again`, cols),
-      centre(`${k('Esc')}                   choose a different puzzle`, cols),
-      centre(`${k('Q')}                     quit`, cols),
+      // Centre the BLOCK, not each line: centring them one by one lines the
+      // text up only by luck, and any change to a key name breaks the column.
+      ...keyTable(
+        [
+          [`${k('Arrow keys')} or ${k('W A S D')}`, 'move'],
+          [`${k('U')} or ${k('Backspace')}`, 'undo (as much as you like!)'],
+          [k('R'), 'start this puzzle again'],
+          [k('Esc'), 'choose a different puzzle'],
+          [`${k('Q')} or ${k('Ctrl+C')}`, 'quit'],
+        ],
+        cols,
+      ),
       '',
       centre(paint('You can never lose. Undo as much as you need.', theme.good, m), cols),
       '',

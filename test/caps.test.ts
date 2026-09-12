@@ -146,8 +146,37 @@ describe('detectCaps', () => {
       savedGlyphMode: 'ascii',
       env: { COLORTERM: 'truecolor' },
     });
+    // Pixel art means the best pixel renderer we have, which is quadrant.
+    assert.equal(caps.glyphs, 'quadrant');
+    assert.equal(caps.needsCalibration, false);
+  });
+
+  test('a colour-capable terminal defaults to quadrant blocks', () => {
+    const caps = detectCaps({
+      isTTY: true,
+      platform: 'darwin',
+      env: { COLORTERM: 'truecolor' },
+    });
+    assert.equal(caps.glyphs, 'quadrant');
+  });
+
+  test('--half-blocks falls back to the U+2580 renderer', () => {
+    const caps = detectCaps({
+      ...base,
+      forceHalfBlocks: true,
+      env: { COLORTERM: 'truecolor' },
+    });
     assert.equal(caps.glyphs, 'blocks');
     assert.equal(caps.needsCalibration, false);
+  });
+
+  test('a remembered "blocks" answer is honoured over the quadrant default', () => {
+    const caps = detectCaps({
+      ...base,
+      savedGlyphMode: 'blocks',
+      env: { COLORTERM: 'truecolor' },
+    });
+    assert.equal(caps.glyphs, 'blocks');
   });
 
   test('--ascii beats --pixel-art when both are given', () => {

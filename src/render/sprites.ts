@@ -30,13 +30,15 @@ import type { RGB } from './color.js';
 import type { DirValue } from '../core/types.js';
 import { theme } from './theme.js';
 
-export type TileSize = 4 | 5 | 6 | 8 | 10 | 12 | 16 | 20 | 24;
+export type TileSize = 4 | 5 | 6 | 8 | 10 | 12 | 16 | 20 | 24 | 32;
 
 /**
  * Largest first - `chooseTileSize` returns the first entry that fits, and
  * `fitsAtMinimumTile` uses the last as the floor. Both depend on this order.
  */
-export const TILE_SIZES: readonly TileSize[] = [24, 20, 16, 12, 10, 8, 6, 5, 4];
+export const TILE_SIZES: readonly TileSize[] = [
+  32, 24, 20, 16, 12, 10, 8, 6, 5, 4,
+];
 
 /** Palette keys shared by every sprite. */
 const PALETTE: Record<string, RGB | null> = {
@@ -948,6 +950,48 @@ const PLAYER_LEFT_16 = spr(16, [
   '..BBBB....BBBB..',
 ]);
 
+/* ---------------------------------------------------------------- coach --- */
+
+/**
+ * The coach. Two sizes only - this is chrome beside the board, not a tile on
+ * it, so the nine-rung ladder would be a lot of art for no gain.
+ *
+ * Drawn as a friendly face with the same outline rule as everything else, so
+ * it reads as belonging to the same world as the player and the crates.
+ */
+const COACH_8 = spr(8, [
+  '..OOOO..',
+  '.ORRRRO.',
+  '.OssssO.',
+  '.OesseO.',
+  '.OsuusO.',
+  '.ObbbbO.',
+  'OblllbbO',
+  '.OBBBBO.',
+]);
+
+const COACH_12 = spr(12, [
+  '....OOOO....',
+  '..OORRRROO..',
+  '.ORRRRRRRRO.',
+  '.OssssssssO.',
+  '.OsessssesO.',
+  '.OssssssssO.',
+  '.OsssuusssO.',
+  '.ObbbbbbbbO.',
+  'ObbllllllbbO',
+  'ObbllllllbbO',
+  '.OBBBBBBBBO.',
+  '..BBB..BBB..',
+]);
+
+export interface CoachArt {
+  readonly small: Sprite;
+  readonly large: Sprite;
+}
+
+export const coachArt: CoachArt = { small: COACH_8, large: COACH_12 };
+
 /* ----------------------------------------------------------------- sets --- */
 
 export interface TileSet {
@@ -1022,20 +1066,25 @@ function doubled(set: TileSet, size: TileSize): TileSet {
   };
 }
 
+const SET_16: TileSet = {
+  size: 16,
+  wall: WALL_16,
+  wallTop: WALL_TOP_16,
+  floor: FLOOR_16,
+  goal: GOAL_16,
+  crate: CRATE_16,
+  crateDone: CRATE_DONE_16,
+  crateStuck: CRATE_STUCK_16,
+  player: facings(PLAYER_UP_16, PLAYER_DOWN_16, PLAYER_LEFT_16),
+};
+
 const SETS: Record<TileSize, TileSet> = {
+  // The two largest exist for quadrant rendering, where a given cell budget
+  // affords twice the pixels. Doubled rather than hand-drawn, like 24 and 20.
+  32: doubled(SET_16, 32),
   24: doubled(SET_12, 24),
   20: doubled(SET_10, 20),
-  16: {
-    size: 16,
-    wall: WALL_16,
-    wallTop: WALL_TOP_16,
-    floor: FLOOR_16,
-    goal: GOAL_16,
-    crate: CRATE_16,
-    crateDone: CRATE_DONE_16,
-    crateStuck: CRATE_STUCK_16,
-    player: facings(PLAYER_UP_16, PLAYER_DOWN_16, PLAYER_LEFT_16),
-  },
+  16: SET_16,
   12: SET_12,
   10: SET_10,
   8: {

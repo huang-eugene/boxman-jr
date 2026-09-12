@@ -25,8 +25,8 @@ import { theme } from './theme.js';
  * are the difference between a 4-pixel tile and a 5-pixel one for a third of
  * the shipped levels.
  */
-export const CHROME_ROWS = 6;
-export const CHROME_ROWS_TIGHT = 4;
+export const CHROME_ROWS = 4;
+export const CHROME_ROWS_TIGHT = 3;
 /** Below this many terminal rows, the play screen drops its spacer lines. */
 export const TIGHT_ROWS = 30;
 
@@ -51,23 +51,47 @@ export function boardRowBudget(rows: number): number {
 }
 
 /**
- * Pick the largest tile size whose rendered board fits in the given terminal.
+ * How the two block schemes convert pixels into terminal cells.
  *
- * A tile of N pixels occupies N columns and N/2 character rows, because each
- * character cell holds two vertically-stacked pixels.
+ *   half-block  a tile of N pixels costs N columns and N/2 rows
+ *   quadrant    a tile of N pixels costs N/2 columns and N/2 rows
+ *
+ * Both put two pixels in a cell vertically; quadrants add two horizontally.
+ *
+ * This lives in ONE place on purpose. chooseTileSize, fitsAtMinimumTile and
+ * paintTooBig each used to carry their own copy of the half-block arithmetic,
+ * which is exactly the sort of duplication that lets a board be sized against a
+ * budget the painter does not honour.
+ */
+export type BlockScheme = 'half' | 'quad';
+
+export function tileCellCost(
+  level: Level,
+  size: TileSize,
+  scheme: BlockScheme,
+): { cols: number; rows: number } {
+  const pxW = level.width * size;
+  return {
+    cols: scheme === 'quad' ? Math.ceil(pxW / 2) : pxW,
+    rows: Math.ceil((level.height * size) / 2),
+  };
+}
+
+/**
+ * Pick the largest tile size whose rendered board fits in the given terminal.
  */
 export function chooseTileSize(
   level: Level,
   cols: number,
   rows: number,
+  scheme: BlockScheme = 'half',
 ): TileSize {
   const availCols = Math.max(cols - 2, 1);
   const availRows = boardRowBudget(rows);
 
   for (const size of TILE_SIZES) {
-    const needCols = level.width * size;
-    const needRows = Math.ceil((level.height * size) / 2);
-    if (needCols <= availCols && needRows <= availRows) return size;
+    const need = tileCellCost(level, size, scheme);
+    if (need.cols <= availCols && need.rows <= availRows) return size;
   }
   // Smallest we ever go. The level loader rejects levels that don't fit here,
   // so reaching this means a very small terminal rather than a bad level.
@@ -85,12 +109,11 @@ export function fitsAtMinimumTile(
   level: Level,
   cols: number,
   rows: number,
+  scheme: BlockScheme = 'half',
 ): boolean {
   const size = TILE_SIZES[TILE_SIZES.length - 1];
-  return (
-    level.width * size <= cols - 2 &&
-    Math.ceil((level.height * size) / 2) <= boardRowBudget(rows)
-  );
+  const need = tileCellCost(level, size, scheme);
+  return need.cols <= cols - 2 && need.rows <= boardRowBudget(rows);
 }
 
 function blit(fb: Framebuffer, sprite: Sprite, x0: number, y0: number): void {

@@ -28,6 +28,8 @@ export interface PackRecord {
 export interface Settings {
   colorMode?: 'auto' | 'truecolor' | 'ansi256' | 'ansi16' | 'ascii';
   glyphMode?: GlyphMode;
+  /** False when the player has turned the coach off. */
+  coach?: boolean;
   /** Which level to resume on. */
   lastPack?: string;
   lastLevel?: string;

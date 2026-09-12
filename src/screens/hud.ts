@@ -67,7 +67,15 @@ export function controlsLine(mode: ColorMode, width: number): string {
     `${key('R')} restart`,
     `${key('Esc')} menu`,
   ];
-  return centre(parts.join('   '), width);
+
+  // The quit hint is a footnote, not a control: dimmed, and the first thing to
+  // go when the window is too narrow to hold the line that actually matters.
+  const quit = paint('Ctrl+C quit', theme.textDim, mode);
+  const full = parts.join('   ') + '   ' + quit;
+  const visible = (t: string): number =>
+    t.replace(/\x1b\[[0-9;]*m/g, '').length;
+
+  return centre(visible(full) <= width ? full : parts.join('   '), width);
 }
 
 /** A gentle nudge when a crate has been pushed somewhere unrecoverable. */
@@ -77,4 +85,115 @@ export function stuckLine(mode: ColorMode, width: number): string {
     paint('U', theme.accent, mode) +
     ' to undo.';
   return centre(paint('', theme.bad, mode) + msg + RESET, width);
+}
+
+/**
+ * Stamp a banner over a frame's lines, replacing whole rows.
+ *
+ * Deliberately replaces rows outright rather than splicing text into them.
+ * Board lines are almost entirely SGR escapes, and slicing one at a visible
+ * column would cut an escape sequence in half and leave the terminal in a
+ * colour state nobody chose. Losing a few rows of pixels behind the banner is
+ * what "printed over the level" means anyway.
+ *
+ * `at` is the first row to overwrite; rows outside the frame are ignored.
+ */
+export function overlayBanner(
+  lines: string[],
+  banner: string[],
+  at: number,
+): string[] {
+  const out = [...lines];
+  for (let i = 0; i < banner.length; i++) {
+    const row = at + i;
+    if (row < 0 || row >= out.length) continue;
+    // Re-open with a reset so no colour from the frame we covered leaks in.
+    out[row] = RESET + banner[i];
+  }
+  return out;
+}
+
+/** Row to start a banner of `height` rows on, centred within `total` rows. */
+export function bannerRow(total: number, height: number): number {
+  return Math.max(0, Math.floor((total - height) / 2));
+}
+
+/**
+ * Word-wrap text to a width, never splitting a word.
+ *
+ * A word longer than the width is allowed to overhang rather than being
+ * chopped: a broken word is harder for a new reader than a slightly wide line.
+ */
+export function wrap(text: string, width: number): string[] {
+  const words = text.split(/\s+/).filter((w) => w.length > 0);
+  const lines: string[] = [];
+  let line = '';
+
+  for (const w of words) {
+    if (line === '') line = w;
+    else if (line.length + 1 + w.length <= width) line += ' ' + w;
+    else {
+      lines.push(line);
+      line = w;
+    }
+  }
+  if (line !== '') lines.push(line);
+  return lines;
+}
+
+/**
+ * A rounded speech bubble with a tail, for the coach.
+ *
+ * Capped at two lines of text on purpose: that is a young reader's budget for
+ * something they did not ask to read, and it also bounds how much room the
+ * coach can steal from the board.
+ */
+export function speechBubble(
+  text: string,
+  width: number,
+  mode: ColorMode,
+): string[] {
+  const inner = Math.max(8, width - 4);
+  let body = wrap(text, inner);
+
+  if (body.length > 2) {
+    // Too long: keep the first two lines and mark the trim, rather than
+    // silently dropping the end of a sentence.
+    body = [body[0], body[1].slice(0, Math.max(0, inner - 1)) + '…'];
+  }
+
+  const w = Math.max(...body.map((l) => l.length));
+  const dim = (s: string): string => paint(s, theme.textDim, mode);
+
+  const out = [dim('╭' + '─'.repeat(w + 2) + '╮')];
+  for (const l of body) {
+    out.push(dim('│ ') + paint(l.padEnd(w), theme.text, mode) + dim(' │'));
+  }
+  out.push(dim('╰─' + '┬' + '─'.repeat(Math.max(0, w)) + '╯'));
+  out.push(dim('  ▼'));
+  return out;
+}
+
+/**
+ * Lay out key/description pairs as an aligned block, centred as a whole.
+ *
+ * Centring each row on its own lines the descriptions up only by accident of
+ * length - rename one key and the column bends. Measuring visible width (the
+ * keys carry colour escapes) and padding to a shared gutter keeps it straight.
+ */
+export function keyTable(
+  rows: ReadonlyArray<readonly [key: string, desc: string]>,
+  width: number,
+): string[] {
+  const visible = (t: string): number =>
+    t.replace(/\x1b\[[0-9;]*m/g, '').length;
+
+  const gutter = Math.max(...rows.map(([key]) => visible(key)));
+  const built = rows.map(
+    ([key, desc]) => key + ' '.repeat(gutter - visible(key) + 3) + desc,
+  );
+
+  const blockW = Math.max(...built.map(visible));
+  const pad = ' '.repeat(Math.max(0, Math.floor((width - blockW) / 2)));
+  return built.map((l) => pad + l);
 }

@@ -14,7 +14,26 @@
 import os from 'node:os';
 
 export type ColorMode = 'truecolor' | 'ansi256' | 'ansi16' | 'ascii';
-export type GlyphMode = 'blocks' | 'ascii';
+/**
+ * How we draw pixels.
+ *
+ *   quadrant  U+2596-U+259F, a 2x2 pixel grid per cell. Half the board width at
+ *             the same detail; the default where blocks are known to render.
+ *   blocks    U+2580 only. The safety net: a terminal can draw the half-block
+ *             and still make a mess of the quadrant set.
+ *   ascii     no block characters at all.
+ */
+export type GlyphMode = 'quadrant' | 'blocks' | 'ascii';
+
+/** Does this glyph mode draw pixel art at all? */
+export function isPixelMode(g: GlyphMode): boolean {
+  return g === 'quadrant' || g === 'blocks';
+}
+
+/** The block scheme a glyph mode implies. */
+export function schemeFor(g: GlyphMode): 'half' | 'quad' {
+  return g === 'quadrant' ? 'quad' : 'half';
+}
 
 export interface Caps {
   color: ColorMode;
@@ -32,6 +51,8 @@ export interface CapsOptions {
   forceNoBlocks?: boolean;
   /** --pixel-art / --blocks=on: demand pixel art and ignore a saved "ascii". */
   forceBlocks?: boolean;
+  /** --half-blocks: fall back to the U+2580-only renderer. */
+  forceHalfBlocks?: boolean;
   /** Persisted answer from a previous run, if any. */
   savedGlyphMode?: GlyphMode;
   env?: NodeJS.ProcessEnv;
@@ -112,10 +133,15 @@ export function detectCaps(opts: CapsOptions = {}): Caps {
     return { color, glyphs: 'ascii', needsCalibration: false };
   }
 
+  // An explicit request for the half-block renderer outranks everything below.
+  if (opts.forceHalfBlocks) {
+    return { color, glyphs: 'blocks', needsCalibration: false };
+  }
+
   // The escape hatch. A saved "ascii" is a remembered answer, and a player who
   // asks for pixel art outright has just given us a newer one.
   if (opts.forceBlocks) {
-    return { color, glyphs: 'blocks', needsCalibration: false };
+    return { color, glyphs: 'quadrant', needsCalibration: false };
   }
 
   if (opts.savedGlyphMode) {
@@ -123,10 +149,12 @@ export function detectCaps(opts: CapsOptions = {}): Caps {
   }
 
   // Only Windows has the raster-font problem worth asking about. Everywhere
-  // else, a colour-capable terminal renders U+2580 correctly in practice.
+  // else, a colour-capable terminal renders the block set correctly in
+  // practice. Calibration answers "blocks", the conservative of the two, since
+  // it is the half-block glyph the prompt actually shows.
   if (platform === 'win32') {
     return { color, glyphs: 'blocks', needsCalibration: true };
   }
 
-  return { color, glyphs: 'blocks', needsCalibration: false };
+  return { color, glyphs: 'quadrant', needsCalibration: false };
 }
