@@ -57,6 +57,38 @@ export function bundledLevelsDir(): string {
   return candidates[0];
 }
 
+/**
+ * Longest display string we accept from a manifest.
+ *
+ * Every one of these is drawn on a single centred line, so a pathologically
+ * long title is a layout problem regardless of intent.
+ */
+const MAX_TEXT = 200;
+
+/**
+ * Strip control characters from a manifest string.
+ *
+ * A pack is data from outside the program - `--levels=DIR` is an advertised
+ * feature, so these strings routinely come from somewhere we did not write -
+ * and they are drawn straight to the terminal. A terminal treats control bytes
+ * as INSTRUCTIONS, not text: an ESC in a level title can retitle the user's
+ * window, clear the screen, or leave colour state nobody chose. Strings that
+ * are displayed must therefore carry no C0/C1 controls at all.
+ *
+ * We strip rather than reject so one stray byte in an otherwise fine
+ * community pack does not make the pack unplayable. Stripping happens HERE, at
+ * the load boundary, rather than at each render site: `name`, `title` and
+ * `attribution` reach the screen through several different paths, and a
+ * boundary that sanitises once cannot be forgotten by a later one.
+ */
+function clean(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  // C0 (\x00-\x1f, \x7f) and C1 (\x80-\x9f). \x9b is a bare CSI introducer, so
+  // dropping the C1 range matters as much as dropping ESC itself.
+  const stripped = value.replace(/[\u0000-\u001f\u007f-\u009f]/g, '');
+  return stripped.slice(0, MAX_TEXT);
+}
+
 function readManifest(dir: string): PackManifest {
   const file = path.join(dir, 'pack.json');
   const raw = JSON.parse(fs.readFileSync(file, 'utf8')) as PackManifest;
@@ -68,10 +100,19 @@ function readManifest(dir: string): PackManifest {
     throw new Error(`${file}: pack is missing a "levels" array.`);
   }
 
+  // Clean ids BEFORE the uniqueness check, not after: two ids that differ only
+  // by a control character are the same id once stripped, and checking the raw
+  // values would wave that collision through into the progress file.
+  const levels = raw.levels.map((entry) => ({
+    ...entry,
+    id: clean(entry.id) ?? '',
+    title: clean(entry.title),
+  }));
+
   // The guardrail that keeps future expansion safe. Duplicate ids would make
   // two different levels share one progress record, silently.
   const seen = new Set<string>();
-  for (const entry of raw.levels) {
+  for (const entry of levels) {
     if (!entry.id) {
       throw new Error(`${file}: every level needs a stable "id".`);
     }
@@ -84,16 +125,51 @@ function readManifest(dir: string): PackManifest {
     seen.add(entry.id);
   }
 
+  // Ids are not display strings, but they are interpolated into error messages
+  // (which are printed) and used as progress keys, so they get cleaned too.
+  const id = clean(raw.id) ?? '';
+  if (id === '') {
+    throw new Error(`${file}: pack "id" must contain printable characters.`);
+  }
+
   return {
     schemaVersion: raw.schemaVersion ?? 1,
-    id: raw.id,
-    name: raw.name ?? raw.id,
-    author: raw.author,
-    attribution: raw.attribution,
+    id,
+    name: clean(raw.name) ?? id,
+    author: clean(raw.author),
+    attribution: clean(raw.attribution),
     order: typeof raw.order === 'number' ? raw.order : 99,
-    unlockAfter: raw.unlockAfter,
-    levels: raw.levels,
+    unlockAfter: clean(raw.unlockAfter),
+    levels,
   };
+}
+
+/**
+ * Resolve a level file against its pack directory, refusing to escape it.
+ *
+ * `entry.file` comes from the manifest, so `"../../.ssh/id_rsa"` is a thing a
+ * pack can ask for. The `.sok` parser happens to reject almost anything that
+ * is not a level, which makes this hard to turn into a real disclosure - but
+ * that is the parser's strictness doing containment work it was never meant to
+ * do, and it still leaves a file-existence oracle. A pack reads its own files
+ * and nothing else.
+ */
+function resolveLevelFile(dir: string, entry: PackEntry): string {
+  if (typeof entry.file !== 'string' || entry.file === '') {
+    throw new Error(`${dir}: level "${entry.id}" is missing a "file".`);
+  }
+
+  const base = path.resolve(dir);
+  const file = path.resolve(base, entry.file);
+
+  if (file !== base && !file.startsWith(base + path.sep)) {
+    throw new Error(
+      `${path.join(dir, 'pack.json')}: level "${entry.id}" points outside its ` +
+        `pack directory. Level files must live inside the pack.`,
+    );
+  }
+
+  return file;
 }
 
 function loadPack(dir: string): Pack {
@@ -101,7 +177,7 @@ function loadPack(dir: string): Pack {
   const levels: Level[] = [];
 
   for (const entry of manifest.levels) {
-    const file = path.join(dir, entry.file);
+    const file = resolveLevelFile(dir, entry);
     const text = fs.readFileSync(file, 'utf8');
     levels.push(
       parseLevel(text, {

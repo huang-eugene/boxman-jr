@@ -73,7 +73,7 @@ export function normalise(raw: unknown): Progress {
   }
 
   if (typeof obj.settings === 'object' && obj.settings !== null) {
-    result.settings = { ...(obj.settings as Settings) };
+    result.settings = normaliseSettings(obj.settings as Record<string, unknown>);
   }
 
   if (typeof obj.packs === 'object' && obj.packs !== null) {
@@ -106,6 +106,58 @@ export function normalise(raw: unknown): Progress {
   }
 
   return result;
+}
+
+const COLOR_MODES: ReadonlySet<string> = new Set([
+  'auto',
+  'truecolor',
+  'ansi256',
+  'ansi16',
+  'ascii',
+]);
+
+const GLYPH_MODES: ReadonlySet<string> = new Set(['quadrant', 'blocks', 'ascii']);
+
+/** Longest saved pack/level id we will carry back in. */
+const MAX_ID = 200;
+
+/**
+ * Coerce the settings block, field by field.
+ *
+ * Spreading the saved object wholesale trusted a file on disk to contain only
+ * the values we wrote. It is a plain JSON file in the user's data directory, so
+ * a hand-edited (or malformed) one could put anything in any field.
+ *
+ * Today nothing here is printed - `glyphMode` is only ever compared against
+ * literals - so a junk value degrades rendering rather than injecting anything.
+ * That is a property of the current consumers, not of the data, and it is not
+ * one a future caller should have to re-derive before printing a setting. The
+ * enums are closed and small; validating them here makes the type honest.
+ */
+function normaliseSettings(raw: Record<string, unknown>): Settings {
+  const settings: Settings = {};
+
+  if (typeof raw.colorMode === 'string' && COLOR_MODES.has(raw.colorMode)) {
+    settings.colorMode = raw.colorMode as Settings['colorMode'];
+  }
+  if (typeof raw.glyphMode === 'string' && GLYPH_MODES.has(raw.glyphMode)) {
+    settings.glyphMode = raw.glyphMode as GlyphMode;
+  }
+  // Only an explicit `false` turns the coach off; anything else means "on",
+  // which is what an absent setting already means.
+  if (typeof raw.coach === 'boolean') settings.coach = raw.coach;
+
+  // Resume pointers are matched against ids we loaded from packs, so a bad one
+  // simply fails to match - but it is also drawn into no screen, and a string
+  // is all we ever want back.
+  if (typeof raw.lastPack === 'string') {
+    settings.lastPack = raw.lastPack.slice(0, MAX_ID);
+  }
+  if (typeof raw.lastLevel === 'string') {
+    settings.lastLevel = raw.lastLevel.slice(0, MAX_ID);
+  }
+
+  return settings;
 }
 
 export function getRecord(
