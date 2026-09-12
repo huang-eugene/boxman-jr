@@ -45,6 +45,29 @@ describe('detectColor', () => {
     assert.equal(detectColor({ ...base, env: { TERM: 'dumb' } }), 'ascii');
   });
 
+  test('a missing TERM on a real TTY still gets colour', () => {
+    // TERM=dumb is a terminal saying it cannot do this; an unset TERM is just a
+    // thin environment. Dropping to plain text over a missing variable is the
+    // loudest possible downgrade for the weakest possible reason.
+    assert.equal(detectColor({ ...base, env: {} }), 'ansi16');
+  });
+
+  test('--pixel-art overrides a terminal we guessed too low', () => {
+    assert.equal(detectColor({ ...base, forceBlocks: true, env: {} }), 'ansi256');
+    assert.equal(
+      detectColor({ ...base, forceBlocks: true, env: { COLORTERM: 'truecolor' } }),
+      'truecolor',
+    );
+  });
+
+  test('--pixel-art still respects NO_COLOR', () => {
+    // NO_COLOR is a deliberate, standardised instruction, not a guess of ours.
+    assert.equal(
+      detectColor({ ...base, forceBlocks: true, env: { NO_COLOR: '1' } }),
+      'ascii',
+    );
+  });
+
   test('256-colour terminals are detected', () => {
     assert.equal(
       detectColor({ ...base, env: { TERM: 'xterm-256color' } }),
@@ -106,6 +129,29 @@ describe('detectCaps', () => {
       env: { COLORTERM: 'truecolor' },
     });
     assert.equal(caps.color, 'truecolor');
+    assert.equal(caps.glyphs, 'ascii');
+  });
+
+  /**
+   * The escape hatch. A remembered "ascii" used to be a one-way door: the game
+   * wrote its own detected glyph mode back to settings on every save, so a
+   * single --ascii run, a piped stdout or a NO_COLOR shell left the player in
+   * plain text for good, with only --reset-progress - which also wipes every
+   * solved puzzle - to get out.
+   */
+  test('--pixel-art overrules a remembered "ascii" answer', () => {
+    const caps = detectCaps({
+      ...base,
+      forceBlocks: true,
+      savedGlyphMode: 'ascii',
+      env: { COLORTERM: 'truecolor' },
+    });
+    assert.equal(caps.glyphs, 'blocks');
+    assert.equal(caps.needsCalibration, false);
+  });
+
+  test('--ascii beats --pixel-art when both are given', () => {
+    const caps = detectCaps({ ...base, forceAscii: true, forceBlocks: true });
     assert.equal(caps.glyphs, 'ascii');
   });
 });

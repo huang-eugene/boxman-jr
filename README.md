@@ -32,6 +32,11 @@ Every puzzle is verified by an automated solver before it ships: guaranteed
 solvable, at most 4 crates, and never more than 25 pushes. The first puzzle takes
 one move.
 
+The solver also measures how much *thinking* each puzzle needs, not just how
+long it is — a puzzle whose answer is visible at a glance fails the build even
+if it takes plenty of pushes. So the difficulty climbs steadily instead of
+flattening out into rows of puzzles that all feel the same.
+
 ## Controls
 
 | Key | What it does |
@@ -48,8 +53,8 @@ one move.
 | Pack | Puzzles | What it's for |
 |---|---|---|
 | **First Steps** | 30 | Hand-designed. Starts at one move and builds up gently. |
-| **The Warehouse** | 40 | Two and three crates, ordered by real difficulty. |
-| **Big Puzzles** | 32 | Three and four crates for when they've got the hang of it. |
+| **The Warehouse** | 40 | Two and three crates. Around 6 pushes, rising to 14. |
+| **Big Puzzles** | 32 | Three and four crates, 10 pushes and up, for when they've got the hang of it. |
 
 ## If the graphics look wrong
 
@@ -71,15 +76,28 @@ npx boxman-jr --selftest
 npx boxman-jr --ascii
 ```
 
+**Seeing `#` and `@` when you expected pixel art?** Ask for it back:
+
+```bash
+npx boxman-jr --pixel-art
+```
+
+That sticks, so you only need it once. `--ascii` does the opposite and is
+always a one-off — it never quietly becomes your permanent setting. If you
+answered the Windows graphics question wrong, `--reset-graphics` forgets the
+answer without touching any solved puzzles.
+
 ## Options
 
 | Flag | Effect |
 |---|---|
-| `--ascii` | Plain text instead of pixel art |
+| `--ascii` | Plain text instead of pixel art (this run only) |
+| `--pixel-art` | Force pixel art back on, and remember it |
 | `--blocks=off` | Keep colour, drop the half-block graphics |
 | `--color=MODE` | `truecolor`, `ansi256`, `ansi16` or `ascii` |
 | `--levels=DIR` | Load your own level packs from a directory |
 | `--selftest` | Show a graphics test pattern |
+| `--reset-graphics` | Forget the saved graphics choice, keep puzzle progress |
 | `--reset-progress` | Start again from the first puzzle |
 
 `NO_COLOR` is respected.
@@ -125,10 +143,21 @@ npm install && npm test
 
 The test suite checks the game rules, the undo system, the renderer, and — most
 importantly — **solves every shipped puzzle** to prove it's solvable and
-age-appropriate. Adding a puzzle that's too hard fails the build.
+age-appropriate. Adding a puzzle that's too hard fails the build, and so does
+adding one that's too easy for where it sits, one that repeats a puzzle already
+in the game, or a run of puzzles that all feel the same length.
 
 ```bash
 npm run build && node dist/main.js
+```
+
+The difficulty curve lives in `tools/difficulty.ts`, read by both the test suite
+and the generator, so a puzzle can only ship if it meets the bar the generator
+was aiming at:
+
+```bash
+npx tsc -p tsconfig.test.json
+node dist-test/tools/generate.js warehouse --dry-run
 ```
 
 ## Licence
@@ -136,9 +165,9 @@ npm run build && node dist/main.js
 MIT — see [LICENSE](LICENSE).
 
 All 102 puzzles are original to this project. The 30 in *First Steps* were
-hand-designed; the rest were built by a generator that works backwards from a
-solved position, then solved forwards to measure real difficulty and keep only
-those an eight-year-old can finish.
+hand-designed; the rest were built by a seeded generator that throws away
+candidate boards until one lands in the difficulty band its slot asks for,
+measured by solving it. Only puzzles an eight-year-old can finish are kept.
 
 This is a Sokoban-style puzzle game — an independent implementation of the
 box-pushing genre, not affiliated with or endorsed by any other publisher.

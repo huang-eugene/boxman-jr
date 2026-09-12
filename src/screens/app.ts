@@ -104,10 +104,17 @@ export class App {
     process.exit(0);
   }
 
+  /**
+   * Persist position. Deliberately does NOT write settings.glyphMode: the caps
+   * we are running with may have come from a one-off `--ascii`, a piped stdout
+   * or NO_COLOR, and writing those back turned a temporary fallback into a
+   * permanent one that only --reset-progress could clear. Only an explicit
+   * answer to the calibration prompt is worth remembering, and main.ts saves
+   * that itself.
+   */
   private save(): void {
     const ref = this.refs[this.index];
     recordPosition(this.progress, ref.pack.manifest.id, ref.level.id);
-    this.progress.settings.glyphMode = this.caps.glyphs;
     saveProgress(this.progress);
   }
 
@@ -433,14 +440,37 @@ export class App {
     );
     lines.push('');
     const ref = this.refs[this.index];
+    // Name the puzzle NUMBER, not just its title. Without it, "you have solved
+    // 3" followed by a board the player doesn't recognise looks like the game
+    // lost their progress.
     lines.push(
-      centre(paint(`Up next: ${ref.level.title}`, theme.text, m), cols),
+      centre(
+        paint(
+          `Up next: Puzzle ${this.index + 1} - ${ref.level.title}`,
+          theme.text,
+          m,
+        ),
+        cols,
+      ),
     );
     lines.push('');
     lines.push('');
     lines.push(centre(paint('Press any key to play', theme.accent, m), cols));
     lines.push('');
     lines.push(centre(paint('Esc  choose a puzzle      Q  quit', theme.textDim, m), cols));
+    if (this.caps.glyphs === 'ascii') {
+      lines.push('');
+      lines.push(
+        centre(
+          paint(
+            'Plain-text mode. For pixel art, run with --pixel-art',
+            theme.textDim,
+            m,
+          ),
+          cols,
+        ),
+      );
+    }
 
     this.paintLines(lines);
   }
