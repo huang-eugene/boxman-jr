@@ -21,6 +21,8 @@ export interface PackEntry {
   id: string;
   file: string;
   title?: string;
+  /** Optimal push count, measured by the solver when the pack was built. */
+  pushes?: number;
 }
 
 export interface PackManifest {
@@ -102,7 +104,11 @@ function loadPack(dir: string): Pack {
     const file = path.join(dir, entry.file);
     const text = fs.readFileSync(file, 'utf8');
     levels.push(
-      parseLevel(text, { id: entry.id, title: entry.title ?? entry.id }),
+      parseLevel(text, {
+        id: entry.id,
+        title: entry.title ?? entry.id,
+        ...(typeof entry.pushes === 'number' ? { optimalPushes: entry.pushes } : {}),
+      }),
     );
   }
 

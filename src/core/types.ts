@@ -50,6 +50,12 @@ export interface Level {
   /** Sorted cell indices of the starting box positions. */
   readonly startBoxes: Int32Array;
   readonly startPlayer: number;
+  /**
+   * Optimal push count, measured by the solver at import time and carried in
+   * pack.json. Used to award stars against what the puzzle actually needs.
+   * Absent for hand-made packs loaded via --levels.
+   */
+  readonly optimalPushes?: number;
 }
 
 /**
