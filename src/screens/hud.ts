@@ -141,6 +141,20 @@ export function wrap(text: string, width: number): string[] {
   return lines;
 }
 
+/** How many lines a bubble may grow to before anything is trimmed. */
+export const MAX_BUBBLE_LINES = 4;
+
+/**
+ * Lines a bubble needs for `text` at a given outer width. Lets the caller
+ * choose a width that fits rather than discovering the trim afterwards.
+ */
+export function bubbleHeight(text: string, width: number): number {
+  return Math.min(
+    MAX_BUBBLE_LINES,
+    wrap(text, Math.max(8, width - 4)).length,
+  );
+}
+
 /**
  * A rounded speech bubble with a tail, for the coach.
  *
@@ -152,14 +166,21 @@ export function speechBubble(
   text: string,
   width: number,
   mode: ColorMode,
+  maxLines = MAX_BUBBLE_LINES,
 ): string[] {
   const inner = Math.max(8, width - 4);
   let body = wrap(text, inner);
 
-  if (body.length > 2) {
-    // Too long: keep the first two lines and mark the trim, rather than
-    // silently dropping the end of a sentence.
-    body = [body[0], body[1].slice(0, Math.max(0, inner - 1)) + '…'];
+  // Truncating is a last resort, not a layout strategy. The coach writes in
+  // whole sentences and half of them need three lines at a sensible bubble
+  // width; cutting them mid-word made the stuck warning - the one line that
+  // tells a child how to recover - unreadable. Callers size the bubble to fit
+  // instead, and this only bites when the window genuinely cannot hold it.
+  if (body.length > maxLines) {
+    const kept = body.slice(0, maxLines);
+    const last = kept.length - 1;
+    kept[last] = kept[last].slice(0, Math.max(0, inner - 1)) + '…';
+    body = kept;
   }
 
   const w = Math.max(...body.map((l) => l.length));

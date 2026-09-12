@@ -54,8 +54,10 @@ import { coachArt, TILE_SIZES } from '../render/sprites.js';
 import { theme } from '../render/theme.js';
 import {
   bannerRow,
+  bubbleHeight,
   centre,
   keyTable,
+  MAX_BUBBLE_LINES,
   controlsLine,
   overlayBanner,
   speechBubble,
@@ -69,6 +71,21 @@ type Screen = 'title' | 'play' | 'won' | 'select' | 'help' | 'skipOffer';
 /** Minimum terminal we can draw anything sensible in. */
 const MIN_COLS = 34;
 const MIN_ROWS = 12;
+
+/** Narrowest bubble worth drawing beside the board. */
+const MIN_BUBBLE_COLS = 22;
+
+/**
+ * The narrowest width at which `text` fits in MAX_BUBBLE_LINES, capped at
+ * `room`. Keeps the bubble from sprawling across a wide window while still
+ * never cutting a sentence that had somewhere to go.
+ */
+function widthToFit(text: string, room: number): number {
+  for (let w = MIN_BUBBLE_COLS; w < room; w++) {
+    if (bubbleHeight(text, w) < MAX_BUBBLE_LINES) return w;
+  }
+  return room;
+}
 
 export interface AppOptions {
   refs: LevelRef[];
@@ -544,9 +561,18 @@ export class App {
     cols: number,
   ): { lines: string[]; coachBeside: boolean } {
     const GAP = 2;
-    const bubbleW = Math.min(30, Math.max(18, cols - board.width - GAP - 2));
+    // Spend whatever width is left on the bubble, rather than clamping it to a
+    // fixed size and truncating text that would have fitted. Most coach lines
+    // are a full sentence; a bubble that is merely "wide enough to look right"
+    // cuts them off.
+    const room = cols - board.width - GAP;
+    const text = this.coachSaid?.text ?? '';
+    const bubbleW = Math.max(
+      MIN_BUBBLE_COLS,
+      Math.min(room, widthToFit(text, room)),
+    );
     const coach =
-      board.width + GAP + bubbleW <= cols
+      room >= MIN_BUBBLE_COLS
         ? this.coachLines(bubbleW, board.width >= 40)
         : [];
 

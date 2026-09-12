@@ -9,6 +9,7 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { bubbleHeight, MAX_BUBBLE_LINES, speechBubble, wrap } from '../src/screens/hud.js';
 import {
   coachLine,
   outranks,
@@ -137,5 +138,72 @@ describe('coach pacing constants', () => {
   test('nudges are rare rather than chatty', () => {
     assert.ok(MANY_UNDOS >= 10, 'undoing a few times is normal, not a problem');
     assert.ok(STALL_MOVES >= 20, 'a stall must be a real stall');
+  });
+});
+
+describe('the coach is legible', () => {
+  const EVENTS: CoachEvent[] = [
+    'levelStart',
+    'stuck',
+    'crateOffGoal',
+    'crateOnGoal',
+    'restart',
+    'manyUndos',
+    'stalled',
+    'solved',
+  ];
+
+  /** Every distinct line the coach can say. */
+  const allLines = (): string[] => {
+    const seen = new Set<string>();
+    for (const e of EVENTS) {
+      for (let r = 0; r < 6; r++) seen.add(coachLine(obs(e, r)).text);
+    }
+    return [...seen];
+  };
+
+  test('every line fits a bubble without being cut off', () => {
+    // The regression this exists for: the bubble was capped at two lines, so
+    // 12 of 19 coach lines - including every stuck warning, the one that tells
+    // a child how to recover - rendered as "...nee…" and could not be read.
+    for (const text of allLines()) {
+      assert.ok(
+        bubbleHeight(text, 30) <= MAX_BUBBLE_LINES,
+        `needs more than ${MAX_BUBBLE_LINES} lines at width 30: ${text}`,
+      );
+    }
+  });
+
+  test('a bubble renders its text verbatim, with no ellipsis', () => {
+    for (const text of allLines()) {
+      const rendered = speechBubble(text, 30, 'ascii').join(' ');
+      assert.ok(!rendered.includes('…'), `truncated: ${text}`);
+
+      // Every word must survive, not just the overall length.
+      for (const word of text.split(/\s+/)) {
+        assert.ok(rendered.includes(word), `lost the word "${word}" from: ${text}`);
+      }
+    }
+  });
+
+  test('wrap never splits a word', () => {
+    for (const text of allLines()) {
+      for (const line of wrap(text, 26)) {
+        for (const word of line.split(' ')) {
+          assert.ok(
+            text.includes(word),
+            `wrap invented or split a word: "${word}"`,
+          );
+        }
+      }
+    }
+  });
+
+  test('a genuinely over-long line is trimmed rather than overflowing', () => {
+    const huge = 'word '.repeat(200).trim();
+    const out = speechBubble(huge, 30, 'ascii');
+    // border top + MAX lines + border bottom + tail
+    assert.equal(out.length, MAX_BUBBLE_LINES + 3);
+    assert.ok(out.join(' ').includes('…'), 'the trim must be visible');
   });
 });
