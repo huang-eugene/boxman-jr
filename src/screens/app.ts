@@ -31,7 +31,15 @@ import { ansi, onResize, out, restore, terminalSize } from '../io/term.js';
 import type { Caps } from '../render/caps.js';
 import { BOLD, paint, RESET } from '../render/color.js';
 import { renderAscii } from '../render/ascii.js';
-import { chooseTileSize, renderBoard, CHROME_ROWS } from '../render/board.js';
+import {
+  chooseTileSize,
+  chromeRows,
+  fitsAtMinimumTile,
+  renderBoard,
+  RESERVED_ROWS,
+  TIGHT_ROWS,
+} from '../render/board.js';
+import { TILE_SIZES } from '../render/sprites.js';
 import { theme } from '../render/theme.js';
 import {
   centre,
@@ -375,14 +383,51 @@ export class App {
 
     const tile = chooseTileSize(this.state.level, cols, rows);
     const { fb } = renderBoard(this.state, tile, { showStuck });
-    return fb.renderRows(this.mode()).map((l, i) => {
-      // Centre by the pixel width, since the line is mostly escape codes.
-      const pad = Math.max(0, Math.floor((cols - this.state.level.width * tile) / 2));
-      return ' '.repeat(pad) + l;
-    });
+    // Centre by the pixel width, since the line is mostly escape codes.
+    const pad = Math.max(0, Math.floor((cols - this.state.level.width * tile) / 2));
+    return fb.renderRows(this.mode()).map((l) => ' '.repeat(pad) + l);
+  }
+
+  /**
+   * Ask for a slightly bigger window, for a puzzle that cannot fit this one.
+   *
+   * Every shipped level fits 100x28, but a few of the tallest do not fit a
+   * default 80x24 terminal even at the smallest tile. Painting them anyway
+   * silently crops the bottom of the board and the controls line - a child
+   * pushing crates towards a goal they cannot see. Saying so is kinder, and
+   * Esc still works, so they are never stuck on this screen.
+   */
+  private paintTooBig(cols: number, rows: number): void {
+    const m = this.mode();
+    const level = this.state.level;
+    const min = TILE_SIZES[TILE_SIZES.length - 1];
+    const needCols = level.width * min + 2;
+    const needRows =
+      Math.ceil((level.height * min) / 2) + chromeRows(rows) + RESERVED_ROWS;
+
+    this.paintLines([
+      '',
+      '',
+      centre(paint('This puzzle needs a little more room!', theme.accent, m), cols),
+      '',
+      centre(`"${level.title}" needs a window about ${needCols} x ${needRows}.`, cols),
+      '',
+      centre(`This one is ${cols} x ${rows} - try dragging it a bit bigger.`, cols),
+      '',
+      '',
+      centre(
+        paint('Esc  choose a different puzzle      Q  quit', theme.textDim, m),
+        cols,
+      ),
+    ]);
   }
 
   private paintPlay(cols: number, rows: number): void {
+    if (this.caps.glyphs === 'blocks' && !fitsAtMinimumTile(this.state.level, cols, rows)) {
+      this.paintTooBig(cols, rows);
+      return;
+    }
+
     const ref = this.refs[this.index];
     const record =
       this.progress.packs[ref.pack.manifest.id]?.levels[ref.level.id];
@@ -398,10 +443,18 @@ export class App {
       best: record?.bestMoves,
     };
 
+    // On a short window the spacer rows are worth more as board: dropping them
+    // buys a whole tile size on a third of the shipped levels. chromeRows() is
+    // what chooseTileSize budgets against, so the two must agree.
+    const roomy = rows >= TIGHT_ROWS;
     const board = this.boardLines(cols, rows);
-    const lines: string[] = ['', titleLine(info, this.mode(), cols), ''];
+
+    const lines: string[] = [];
+    if (roomy) lines.push('');
+    lines.push(titleLine(info, this.mode(), cols));
+    if (roomy) lines.push('');
     lines.push(...board);
-    lines.push('');
+    if (roomy) lines.push('');
     lines.push(statusLine(info, this.mode(), cols));
     lines.push(
       this.stuckCell >= 0
@@ -458,6 +511,26 @@ export class App {
     lines.push(centre(paint('Press any key to play', theme.accent, m), cols));
     lines.push('');
     lines.push(centre(paint('Esc  choose a puzzle      Q  quit', theme.textDim, m), cols));
+
+    // The puzzles are not ours, and their licence asks that they stay credited.
+    for (const credit of this.credits()) {
+      lines.push('');
+      lines.push(centre(paint(credit, theme.textDim, m), cols));
+    }
+
+    // Tile size is driven by how many ROWS the window has, so a player on a
+    // default 80x24 terminal gets the coarsest art and no idea that a taller
+    // window would give them the detailed version.
+    if (this.caps.glyphs === 'blocks' && chooseTileSize(ref.level, cols, rows) < 8) {
+      lines.push('');
+      lines.push(
+        centre(
+          paint('Tip: a bigger window means bigger pictures!', theme.textDim, m),
+          cols,
+        ),
+      );
+    }
+
     if (this.caps.glyphs === 'ascii') {
       lines.push('');
       lines.push(
@@ -484,10 +557,12 @@ export class App {
     lines.push('');
     lines.push(centre(paint(stars, theme.accent, m), cols));
     lines.push('');
+    const moves = this.state.moves;
     lines.push(
       centre(
         paint(
-          `${this.refs[this.index].level.title} solved in ${this.state.moves} moves`,
+          `${this.refs[this.index].level.title} solved in ${moves} ` +
+            `${moves === 1 ? 'move' : 'moves'}`,
           theme.text,
           m,
         ),
@@ -518,13 +593,37 @@ export class App {
   /**
    * Stars are a reward, never a judgement: the floor is one star, so finishing
    * a puzzle always feels like a win regardless of how long it took.
+   *
+   * Graded against the level's par - the optimal push count the solver measured
+   * when the pack was built - rather than a guess from the goal count. The old
+   * guess assumed six moves per crate, which on these puzzles means a child who
+   * solves a twenty-push level perfectly is told they earned one star.
    */
   private starsFor(): string {
+    const par = this.state.level.optimalPushes;
+
+    if (par !== undefined && par > 0) {
+      if (this.state.pushes <= Math.ceil(par * 1.3)) return '* * *';
+      if (this.state.pushes <= par * 2) return '* *';
+      return '*';
+    }
+
+    // No par recorded: a pack loaded with --levels. Fall back to the old guess.
     const optimalish = goalCount(this.state.level) * 6;
     const moves = this.state.moves;
     if (moves <= optimalish) return '* * *';
     if (moves <= optimalish * 2) return '* *';
     return '*';
+  }
+
+  /** Distinct puzzle attributions across the loaded packs, in pack order. */
+  private credits(): string[] {
+    const seen: string[] = [];
+    for (const pack of this.packs) {
+      const credit = pack.manifest.attribution;
+      if (credit && !seen.includes(credit)) seen.push(credit);
+    }
+    return seen;
   }
 
   private paintSelect(cols: number, rows: number): void {
@@ -579,6 +678,8 @@ export class App {
       centre(`${k('Q')}                     quit`, cols),
       '',
       centre(paint('You can never lose. Undo as much as you need.', theme.good, m), cols),
+      '',
+      ...this.credits().map((c) => centre(paint(c, theme.textDim, m), cols)),
       '',
       centre(paint('Press any key to go back', theme.textDim, m), cols),
     ];

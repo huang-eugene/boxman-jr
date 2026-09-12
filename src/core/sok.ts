@@ -23,6 +23,8 @@ export interface ParseOptions {
   /** Stable level id, supplied by the pack loader. */
   id: string;
   title: string;
+  /** Optimal pushes from the manifest, if the pack records one. */
+  optimalPushes?: number;
 }
 
 /**
@@ -126,7 +128,7 @@ function assertEnclosed(
 
 /** Parse `.sok` text into an immutable Level, validating as we go. */
 export function parseLevel(text: string, opts: ParseOptions): Level {
-  const { id, title } = opts;
+  const { id, title, optimalPushes } = opts;
   const rows = toRows(text);
 
   if (rows.length === 0) {
@@ -203,5 +205,6 @@ export function parseLevel(text: string, opts: ParseOptions): Level {
     goals,
     startBoxes: Int32Array.from(boxList.sort((a, b) => a - b)),
     startPlayer: player,
+    ...(typeof optimalPushes === 'number' ? { optimalPushes } : {}),
   };
 }

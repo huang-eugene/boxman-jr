@@ -13,20 +13,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { flatten, loadPacks } from '../src/io/packs.js';
 import { solve, type SolveResult } from '../tools/solver.js';
-import { fingerprint } from '../tools/generate.js';
+import { fingerprint } from '../tools/import-microban.js';
 import {
+  BUDGET_COLS,
+  BUDGET_ROWS,
   MAX_BOXES,
   MAX_PUSHES,
   PLATEAU_MIN_DISTINCT,
   PLATEAU_WINDOW,
-  targetFor,
-  tutorialFloor,
+  SOLVER_BUDGET,
 } from '../tools/difficulty.js';
 import { fitsAtMinimumTile } from '../src/render/board.js';
-
-/** The design budget from the plan: PowerShell at 100x28, tile >= 4px. */
-const BUDGET_COLS = 100;
-const BUDGET_ROWS = 28;
 
 const levelsDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -41,12 +38,12 @@ const refs = flatten(packs);
 /**
  * Every level, solved once, shared by every test below.
  *
- * Solving 100-odd Sokoban levels is the expensive part of this suite; doing it
+ * Solving 90-odd Sokoban levels is the expensive part of this suite; doing it
  * per test would make adding a check something you think twice about, which is
  * exactly the wrong incentive.
  */
 const rated = new Map<string, SolveResult>(
-  refs.map((r) => [`${r.pack.manifest.id}/${r.level.id}`, solve(r.level, 400_000)]),
+  refs.map((r) => [`${r.pack.manifest.id}/${r.level.id}`, solve(r.level, SOLVER_BUDGET)]),
 );
 const rate = (ref: (typeof refs)[number]): SolveResult =>
   rated.get(`${ref.pack.manifest.id}/${ref.level.id}`)!;
@@ -70,6 +67,24 @@ describe('shipped levels', () => {
     }
   });
 
+  /**
+   * Microban is not ours. The licence is "freely distributable provided they
+   * remain properly credited", so shipping a pack without the credit attached
+   * is a licence breach, not a missing nicety - which makes it a test.
+   */
+  test('every pack credits where its puzzles came from', () => {
+    for (const pack of packs) {
+      assert.ok(
+        pack.manifest.attribution && pack.manifest.attribution.length > 0,
+        `${pack.manifest.id} has no attribution`,
+      );
+      assert.ok(
+        pack.manifest.author && pack.manifest.author.length > 0,
+        `${pack.manifest.id} has no author`,
+      );
+    }
+  });
+
   test('every level fits the terminal budget at a legible tile size', () => {
     for (const ref of refs) {
       assert.ok(
@@ -86,6 +101,19 @@ describe('shipped levels', () => {
         ref.level.title && ref.level.title !== ref.level.id,
         `${ref.pack.manifest.id}/${ref.level.id} has no proper title`,
       );
+    }
+  });
+
+  test('no two levels share a title', () => {
+    const seen = new Map<string, string>();
+    for (const ref of refs) {
+      const previous = seen.get(ref.level.title);
+      assert.equal(
+        previous,
+        undefined,
+        `${ref.level.id} and ${previous} are both called "${ref.level.title}"`,
+      );
+      seen.set(ref.level.title, ref.level.id);
     }
   });
 
@@ -153,6 +181,29 @@ describe('shipped levels', () => {
     assert.deepEqual(failures, [], `\n${failures.join('\n')}\n`);
   });
 
+  /**
+   * The recorded par must be the truth.
+   *
+   * pack.json carries each level's optimal push count so the win screen can
+   * award stars against what the puzzle actually needs. A stale number there
+   * would silently make a puzzle ungradeable, so it is checked against a fresh
+   * solve rather than trusted.
+   */
+  test('the par recorded in pack.json is the solver-optimal push count', () => {
+    const failures: string[] = [];
+    for (const ref of refs) {
+      const result = rate(ref);
+      if (!result.solved) continue;
+      if (ref.level.optimalPushes !== result.pushes) {
+        failures.push(
+          `${ref.pack.manifest.id}/${ref.level.id}: pack.json says ` +
+            `${ref.level.optimalPushes}, solver says ${result.pushes}`,
+        );
+      }
+    }
+    assert.deepEqual(failures, [], `\n${failures.join('\n')}\n`);
+  });
+
   test('the first level is genuinely trivial', () => {
     // An 8-year-old must succeed almost immediately, or they never see level 2.
     const first = refs[0].level;
@@ -166,69 +217,33 @@ describe('shipped levels', () => {
   });
 
   /**
-   * The "too easy / boring" guard.
+   * The curve, stated as an invariant.
    *
-   * Push count alone does not catch it: the original Warehouse pack had levels
-   * eight pushes long that the solver finished in eighteen expansions, because
-   * every crate started next to its goal and the answer was visible at a
-   * glance. `explored` - how many positions the breadth-first solver had to
-   * expand - is what separates a puzzle from a chore, so each slot has a floor
-   * on both.
+   * The packs are built by sorting on `explored` - how many positions the
+   * breadth-first solver had to expand - because push count alone is a poor
+   * proxy for difficulty: the old Warehouse pack had eight-push levels the
+   * solver finished in eighteen expansions, because every crate started next to
+   * its goal and the answer was visible at a glance.
+   *
+   * So the ordering must never go backwards. This is what stops someone
+   * dropping a new puzzle into the middle of a pack by hand and quietly
+   * flattening the curve.
    */
-  test('every generated level meets the difficulty its slot asks for', () => {
+  test('difficulty never goes backwards across the whole game', () => {
     const failures: string[] = [];
+    let previous = { name: '(start)', explored: -1 };
 
-    for (const pack of packs) {
-      const n = pack.manifest.levels.length;
-      pack.levels.forEach((level, j) => {
-        const target = targetFor(pack.manifest.id, j, n);
-        if (target === null) return;
-        const result = rated.get(`${pack.manifest.id}/${level.id}`)!;
-        const name = `${pack.manifest.id}/${level.id} "${level.title}" (#${j + 1})`;
-
-        if (result.pushes < target.minPushes) {
-          failures.push(
-            `${name}: ${result.pushes} pushes, slot wants at least ${target.minPushes}`,
-          );
-        }
-        if (result.pushes > target.maxPushes) {
-          failures.push(
-            `${name}: ${result.pushes} pushes, slot allows at most ${target.maxPushes}`,
-          );
-        }
-        if (result.explored < target.minExplored) {
-          failures.push(
-            `${name}: solved in ${result.explored} expansions, slot wants at ` +
-              `least ${target.minExplored} - this one is a chore, not a puzzle`,
-          );
-        }
-      });
-    }
-
-    assert.deepEqual(failures, [], `\n${failures.join('\n')}\n`);
-  });
-
-  test('First Steps never drops below its own opening difficulty', () => {
-    // Hand-designed, so no mechanical curve - but a two-push level the solver
-    // cracks in three expansions has no business being puzzle 24.
-    const tutorial = packs.find((p) => p.manifest.id === 'tutorial');
-    assert.ok(tutorial, 'the tutorial pack should exist');
-
-    const failures: string[] = [];
-    tutorial.levels.forEach((level, j) => {
-      const floor = tutorialFloor(j);
-      const result = rated.get(`tutorial/${level.id}`)!;
-      const name = `tutorial/${level.id} "${level.title}" (#${j + 1})`;
-
-      if (result.pushes < floor.minPushes) {
-        failures.push(`${name}: ${result.pushes} pushes, floor is ${floor.minPushes}`);
-      }
-      if (result.explored < floor.minExplored) {
+    for (const ref of refs) {
+      const result = rate(ref);
+      const name = `${ref.pack.manifest.id}/${ref.level.id} "${ref.level.title}"`;
+      if (result.solved && result.explored < previous.explored) {
         failures.push(
-          `${name}: ${result.explored} expansions, floor is ${floor.minExplored}`,
+          `${name} needs ${result.explored} expansions but follows ` +
+            `${previous.name} at ${previous.explored} - the curve dips here`,
         );
       }
-    });
+      if (result.solved) previous = { name, explored: result.explored };
+    }
 
     assert.deepEqual(failures, [], `\n${failures.join('\n')}\n`);
   });

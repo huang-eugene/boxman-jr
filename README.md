@@ -3,8 +3,8 @@
 A friendly crate-pushing puzzle game for kids, right in your terminal.
 
 Push every crate onto a marked spot. That's the whole game — but it gets
-cleverer as you go. **102 puzzles**, starting with one you can solve in a single
-move.
+cleverer as you go. **91 puzzles** from the classic *Microban* set, starting
+with one you can solve in a single move.
 
 ```bash
 npx boxman-jr
@@ -29,13 +29,14 @@ a child never gets stuck, frustrated, or told off by the computer:
   you left off.
 
 Every puzzle is verified by an automated solver before it ships: guaranteed
-solvable, at most 4 crates, and never more than 25 pushes. The first puzzle takes
+solvable, at most 4 crates, and never more than 40 pushes. The first puzzle takes
 one move.
 
 The solver also measures how much *thinking* each puzzle needs, not just how
-long it is — a puzzle whose answer is visible at a glance fails the build even
-if it takes plenty of pushes. So the difficulty climbs steadily instead of
-flattening out into rows of puzzles that all feel the same.
+long it is, by counting the positions it had to search. That number is what the
+puzzles are **ordered by**, so the difficulty climbs steadily instead of
+flattening out into rows of puzzles that all feel the same — and the build fails
+if anyone drops a puzzle into a pack where the curve would dip.
 
 ## Controls
 
@@ -50,15 +51,42 @@ flattening out into rows of puzzles that all feel the same.
 
 ## The puzzles
 
+The puzzles are **Microban**, by **David W. Skinner** — 155 small Sokoban
+puzzles released in 2000, each one built around a single idea, and recommended
+by their author as a good set for beginners and for children.
+
+> These sets may be freely distributed provided they remain properly credited.
+> — David W. Skinner
+
+Source: <http://www.abelmartin.com/rj/sokobanJS/Skinner/David%20W.%20Skinner%20-%20Sokoban.htm>
+
+This game ships the 91 of them that fit a terminal window, use at most four
+crates, and can be solved in at most forty pushes — selected, verified and
+sorted by difficulty with the solver in `tools/`. Full credit, and the licence
+terms, are in `levels/microban1/CREDITS.md`.
+
+**The MIT licence in this repository covers the game's code. It does not cover
+the puzzles**, which remain David W. Skinner's work.
+
 | Pack | Puzzles | What it's for |
 |---|---|---|
-| **First Steps** | 30 | Hand-designed. Starts at one move and builds up gently. |
-| **The Warehouse** | 40 | Two and three crates. Around 6 pushes, rising to 14. |
-| **Big Puzzles** | 32 | Three and four crates, 10 pushes and up, for when they've got the hang of it. |
+| **Warming Up** | 30 | One to four crates. A single push, rising to about twenty. |
+| **Getting Tricky** | 31 | Where you start having to plan the order you push things in. |
+| **Proper Puzzles** | 30 | Up to forty pushes, for when they've got the hang of it. |
+
+## Graphics
+
+The game draws real pixel art using half-block characters and 24-bit colour: one
+terminal character holds two stacked pixels, so a tile is drawn at anything from
+4×4 up to 24×24 pixels.
+
+Which of those you get depends on the size of your window, and **rows are what
+matter** — a tile of N pixels costs N columns but also N/2 rows, so a taller
+window buys detail faster than a wider one. The game picks the largest tile that
+fits and says so on the title screen when a bigger window would help.
 
 ## If the graphics look wrong
 
-The game draws real pixel art using half-block characters and 24-bit colour.
 Most terminals handle this well, including Windows Terminal and PowerShell on
 Windows 10 or later.
 
@@ -151,23 +179,25 @@ in the game, or a run of puzzles that all feel the same length.
 npm run build && node dist/main.js
 ```
 
-The difficulty curve lives in `tools/difficulty.ts`, read by both the test suite
-and the generator, so a puzzle can only ship if it meets the bar the generator
-was aiming at:
+The limits live in `tools/difficulty.ts`, read by both the test suite and the
+importer, so a puzzle can only ship if it meets the bar the importer was
+filtering for. To rebuild the packs from the Microban collection in
+`tools/data/` — solving, rating and re-sorting every puzzle:
 
 ```bash
 npx tsc -p tsconfig.test.json
-node dist-test/tools/generate.js warehouse --dry-run
+node dist-test/tools/import-microban.js --dry-run
 ```
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE).
+The **code** is MIT — see [LICENSE](LICENSE).
 
-All 102 puzzles are original to this project. The 30 in *First Steps* were
-hand-designed; the rest were built by a seeded generator that throws away
-candidate boards until one lands in the difficulty band its slot asks for,
-measured by solving it. Only puzzles an eight-year-old can finish are kept.
+The **puzzles** are not. They are *Microban* by **David W. Skinner**, included
+here under his terms: "These sets may be freely distributed provided they remain
+properly credited." Every level file names the puzzle it came from, and
+[`levels/microban1/CREDITS.md`](levels/microban1/CREDITS.md) carries the full
+credit. If you fork this, keep it.
 
 This is a Sokoban-style puzzle game — an independent implementation of the
 box-pushing genre, not affiliated with or endorsed by any other publisher.
