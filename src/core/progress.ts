@@ -237,6 +237,97 @@ export interface LevelCursor {
   levelId: string;
 }
 
+/** Keep the better half of each field when one puzzle has two records. */
+function mergeRecords(
+  into: LevelRecord | undefined,
+  from: LevelRecord,
+): LevelRecord {
+  if (into === undefined) return from;
+
+  const best = (a?: number, b?: number): number | undefined =>
+    a === undefined ? b : b === undefined ? a : Math.min(a, b);
+
+  return {
+    solved: into.solved || from.solved,
+    ...(best(into.bestMoves, from.bestMoves) !== undefined
+      ? { bestMoves: best(into.bestMoves, from.bestMoves) }
+      : {}),
+    ...(best(into.bestPushes, from.bestPushes) !== undefined
+      ? { bestPushes: best(into.bestPushes, from.bestPushes) }
+      : {}),
+    ...(into.skipped || from.skipped ? { skipped: true } : {}),
+  };
+}
+
+/**
+ * Move saved records to the pack that now holds their level.
+ *
+ * Records are keyed by (packId, levelId), which is what lets a level be
+ * inserted anywhere in a pack without scrambling anything. What it does NOT
+ * survive on its own is a level moving BETWEEN packs - and that happens for a
+ * good reason: the packs are difficulty tiers cut from one measured curve, so
+ * adding new puzzles re-cuts the boundaries and a level can land a tier either
+ * side of where it was. Without this, a child who had solved forty puzzles
+ * would come back to find half of them unsolved again.
+ *
+ * Level ids are the durable identity, so they are what we follow. A level id
+ * that appears in more than one loaded pack is not followed at all: that only
+ * happens with a hand-made `--levels` pack that reuses a bundled id, and
+ * guessing which puzzle the record belongs to would be worse than leaving it
+ * where it is. Records whose level id is nowhere in the loaded packs are left
+ * untouched too - the player may simply be running with `--levels` today, and
+ * their bundled progress must still be there tomorrow.
+ *
+ * Returns true if anything moved, so the caller knows to save.
+ */
+export function reconcile(
+  progress: Progress,
+  cursors: readonly LevelCursor[],
+): boolean {
+  // Where each level id lives now; null means "in more than one pack".
+  const home = new Map<string, string | null>();
+  for (const c of cursors) {
+    home.set(c.levelId, home.has(c.levelId) ? null : c.packId);
+  }
+
+  let changed = false;
+
+  // Object.entries snapshots, so a pack created below is not re-scanned - which
+  // is what stops a record being moved twice in one pass.
+  for (const [packId, pack] of Object.entries(progress.packs)) {
+    for (const [levelId, record] of Object.entries(pack.levels)) {
+      const now = home.get(levelId);
+      if (now === undefined || now === null || now === packId) continue;
+
+      const target = (progress.packs[now] ??= { levels: {} });
+      target.levels[levelId] = mergeRecords(target.levels[levelId], record);
+      delete pack.levels[levelId];
+      changed = true;
+    }
+  }
+
+  // A pack emptied by the moves above is a pack that no longer exists.
+  for (const [packId, pack] of Object.entries(progress.packs)) {
+    if (Object.keys(pack.levels).length === 0) {
+      delete progress.packs[packId];
+      changed = true;
+    }
+  }
+
+  // The resume pointer names a pack too, and a stale one would send the player
+  // back to the title screen's "carry on" with nothing behind it.
+  const { lastLevel, lastPack } = progress.settings;
+  if (lastLevel !== undefined) {
+    const now = home.get(lastLevel);
+    if (now !== undefined && now !== null && now !== lastPack) {
+      progress.settings.lastPack = now;
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
 /**
  * Decide which level to open the game on.
  *

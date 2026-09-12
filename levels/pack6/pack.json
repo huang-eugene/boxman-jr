@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "id": "pack6",
+  "name": "Head Scratchers",
+  "author": "David W. Skinner",
+  "attribution": "Puzzles from Microban by David W. Skinner, used with credit.",
+  "order": 6,
+  "levels": [
+    {
+      "id": "m091",
+      "file": "m091.sok",
+      "title": "Both Ways",
+      "pushes": 14
+    },
+    {
+      "id": "m3-072",
+      "file": "m3-072.sok",
+      "title": "The Tall Order",
+      "pushes": 24
+    },
+    {
+      "id": "m049",
+      "file": "m049.sok",
+      "title": "Drop Them Down",
+      "pushes": 21
+    },
+    {
+      "id": "m2-051",
+      "file": "m2-051.sok",
+      "title": "Four in Pairs",
+      "pushes": 14
+    },
+    {
+      "id": "m2-098",
+      "file": "m2-098.sok",
+      "title": "The Tall Column",
+      "pushes": 16
+    },
+    {
+      "id": "m2-050",
+      "file": "m2-050.sok",
+      "title": "Mirror Image",
+      "pushes": 16
+    },
+    {
+      "id": "m006",
+      "file": "m006.sok",
+      "title": "The Old Warehouse",
+      "pushes": 29
+    },
+    {
+      "id": "m3-006",
+      "file": "m3-006.sok",
+      "title": "The Twin Pairs",
+      "pushes": 18
+    },
+    {
+      "id": "m064",
+      "file": "m064.sok",
+      "title": "The Staircase",
+      "pushes": 30
+    },
+    {
+      "id": "m2-059",
+      "file": "m2-059.sok",
+      "title": "Three Doorways",
+      "pushes": 22
+    },
+    {
+      "id": "m3-088",
+      "file": "m3-088.sok",
+      "title": "The Long Step",
+      "pushes": 24
+    },
+    {
+      "id": "m073",
+      "file": "m073.sok",
+      "title": "Through the House",
+      "pushes": 25
+    },
+    {
+      "id": "m2-026",
+      "file": "m2-026.sok",
+      "title": "Up the Side",
+      "pushes": 20
+    },
+    {
+      "id": "m2-034",
+      "file": "m2-034.sok",
+      "title": "Up the Column",
+      "pushes": 34
+    },
+    {
+      "id": "m3-016",
+      "file": "m3-016.sok",
+      "title": "Round the Nooks",
+      "pushes": 22
+    },
+    {
+      "id": "m2-048",
+      "file": "m2-048.sok",
+      "title": "The Crowded Middle",
+      "pushes": 22
+    },
+    {
+      "id": "m3-015",
+      "file": "m3-015.sok",
+      "title": "The Four Across",
+      "pushes": 20
+    },
+    {
+      "id": "m086",
+      "file": "m086.sok",
+      "title": "Four in the Corner",
+      "pushes": 25
+    },
+    {
+      "id": "m034",
+      "file": "m034.sok",
+      "title": "All Together Now",
+      "pushes": 8
+    },
+    {
+      "id": "m149",
+      "file": "m149.sok",
+      "title": "Crates Down the Corridor",
+      "pushes": 35
+    },
+    {
+      "id": "m005",
+      "file": "m005.sok",
+      "title": "The Windmill",
+      "pushes": 6
+    },
+    {
+      "id": "m2-044",
+      "file": "m2-044.sok",
+      "title": "Around the Block",
+      "pushes": 36
+    },
+    {
+      "id": "m2-031",
+      "file": "m2-031.sok",
+      "title": "The Whole Way Round",
+      "pushes": 40
+    },
+    {
+      "id": "m016",
+      "file": "m016.sok",
+      "title": "Two by Two",
+      "pushes": 39
+    },
+    {
+      "id": "m110",
+      "file": "m110.sok",
+      "title": "The Pinwheel",
+      "pushes": 14
+    },
+    {
+      "id": "m2-058",
+      "file": "m2-058.sok",
+      "title": "Four to the Left",
+      "pushes": 31
+    },
+    {
+      "id": "m128",
+      "file": "m128.sok",
+      "title": "Cross the Yard",
+      "pushes": 19
+    },
+    {
+      "id": "m072",
+      "file": "m072.sok",
+      "title": "Two Halves",
+      "pushes": 40
+    },
+    {
+      "id": "m096",
+      "file": "m096.sok",
+      "title": "The Crossroads",
+      "pushes": 37
+    },
+    {
+      "id": "m3-012",
+      "file": "m3-012.sok",
+      "title": "Into the Corner Room",
+      "pushes": 30
+    },
+    {
+      "id": "m2-064",
+      "file": "m2-064.sok",
+      "title": "The Long Room",
+      "pushes": 15
+    }
+  ]
+}

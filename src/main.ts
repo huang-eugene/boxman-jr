@@ -8,7 +8,7 @@
 
 import { flatten, loadPacks, type Pack } from './io/packs.js';
 import { loadProgress, saveProgress, progressPath } from './io/store.js';
-import { resumeIndex } from './core/progress.js';
+import { reconcile, resumeIndex } from './core/progress.js';
 import { enterGameMode, out, restore, terminalSize, ansi } from './io/term.js';
 import {
   detectCaps,
@@ -199,6 +199,16 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  const cursors = refs.map((r) => ({
+    packId: r.pack.manifest.id,
+    levelId: r.level.id,
+  }));
+
+  // Adding puzzles re-cuts the difficulty tiers, so a level the player has
+  // already solved can move to another pack. Follow its record across before
+  // anything reads progress, or their stars quietly disappear.
+  if (reconcile(progress, cursors)) saveProgress(progress);
+
   const caps = detectCaps({
     forceAscii: args.ascii,
     forceColor: args.color,
@@ -254,10 +264,7 @@ async function main(): Promise<void> {
     });
   }
 
-  const startAt = resumeIndex(
-    refs.map((r) => ({ packId: r.pack.manifest.id, levelId: r.level.id })),
-    progress,
-  );
+  const startAt = resumeIndex(cursors, progress);
 
   const app = new App({
     refs,

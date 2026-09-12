@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "id": "pack2",
+  "name": "Finding Your Feet",
+  "author": "David W. Skinner",
+  "attribution": "Puzzles from Microban by David W. Skinner, used with credit.",
+  "order": 2,
+  "levels": [
+    {
+      "id": "m050",
+      "file": "m050.sok",
+      "title": "Across the Hall",
+      "pushes": 17
+    },
+    {
+      "id": "m3-091",
+      "file": "m3-091.sok",
+      "title": "All Around You",
+      "pushes": 8
+    },
+    {
+      "id": "m2-003",
+      "file": "m2-003.sok",
+      "title": "Up and In",
+      "pushes": 11
+    },
+    {
+      "id": "m019",
+      "file": "m019.sok",
+      "title": "The Corridor",
+      "pushes": 20
+    },
+    {
+      "id": "m3-068",
+      "file": "m3-068.sok",
+      "title": "One Then the Next",
+      "pushes": 7
+    },
+    {
+      "id": "m3-062",
+      "file": "m3-062.sok",
+      "title": "Three in the Stack",
+      "pushes": 11
+    },
+    {
+      "id": "m003",
+      "file": "m003.sok",
+      "title": "Two Little Rooms",
+      "pushes": 13
+    },
+    {
+      "id": "m2-029",
+      "file": "m2-029.sok",
+      "title": "The Little Landing",
+      "pushes": 9
+    },
+    {
+      "id": "m2-041",
+      "file": "m2-041.sok",
+      "title": "Corner to Corner",
+      "pushes": 10
+    },
+    {
+      "id": "m2-017",
+      "file": "m2-017.sok",
+      "title": "Down to the Floor",
+      "pushes": 10
+    },
+    {
+      "id": "m058",
+      "file": "m058.sok",
+      "title": "Shuffle Along",
+      "pushes": 11
+    },
+    {
+      "id": "m3-097",
+      "file": "m3-097.sok",
+      "title": "The Little Huddle",
+      "pushes": 12
+    },
+    {
+      "id": "m082",
+      "file": "m082.sok",
+      "title": "Zig and Zag",
+      "pushes": 14
+    },
+    {
+      "id": "m2-020",
+      "file": "m2-020.sok",
+      "title": "Round the Middle",
+      "pushes": 14
+    },
+    {
+      "id": "m017",
+      "file": "m017.sok",
+      "title": "Three to Place",
+      "pushes": 9
+    },
+    {
+      "id": "m2-010",
+      "file": "m2-010.sok",
+      "title": "Row Upon Row",
+      "pushes": 7
+    },
+    {
+      "id": "m038",
+      "file": "m038.sok",
+      "title": "The Cross Hall",
+      "pushes": 8
+    },
+    {
+      "id": "m3-090",
+      "file": "m3-090.sok",
+      "title": "Three Around You",
+      "pushes": 10
+    },
+    {
+      "id": "m3-078",
+      "file": "m3-078.sok",
+      "title": "The Low Room",
+      "pushes": 11
+    },
+    {
+      "id": "m3-079",
+      "file": "m3-079.sok",
+      "title": "The High Room",
+      "pushes": 9
+    },
+    {
+      "id": "m018",
+      "file": "m018.sok",
+      "title": "Down the Stairs",
+      "pushes": 13
+    },
+    {
+      "id": "m3-060",
+      "file": "m3-060.sok",
+      "title": "The Three Slots",
+      "pushes": 15
+    },
+    {
+      "id": "m040",
+      "file": "m040.sok",
+      "title": "In the Middle",
+      "pushes": 7
+    },
+    {
+      "id": "m3-081",
+      "file": "m3-081.sok",
+      "title": "The Little Cross",
+      "pushes": 16
+    },
+    {
+      "id": "m3-080",
+      "file": "m3-080.sok",
+      "title": "Down from the Top",
+      "pushes": 21
+    },
+    {
+      "id": "m057",
+      "file": "m057.sok",
+      "title": "The Long Drop",
+      "pushes": 23
+    },
+    {
+      "id": "m055",
+      "file": "m055.sok",
+      "title": "Two Floors",
+      "pushes": 27
+    },
+    {
+      "id": "m011",
+      "file": "m011.sok",
+      "title": "Up the Steps",
+      "pushes": 16
+    },
+    {
+      "id": "m2-004",
+      "file": "m2-004.sok",
+      "title": "Room to Spare",
+      "pushes": 17
+    },
+    {
+      "id": "m020",
+      "file": "m020.sok",
+      "title": "Straight Ahead",
+      "pushes": 16
+    },
+    {
+      "id": "m029",
+      "file": "m029.sok",
+      "title": "The Big Room",
+      "pushes": 22
+    }
+  ]
+}

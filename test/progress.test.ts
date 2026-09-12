@@ -6,6 +6,7 @@ import {
   recordWin,
   recordSkip,
   recordPosition,
+  reconcile,
   resumeIndex,
   isSolved,
   solvedCount,
@@ -48,6 +49,80 @@ describe('progress', () => {
     assert.equal(isSolved(reloaded, 'tutorial', 't02b'), false);
     assert.equal(reloaded.packs.tutorial.levels.t03.bestMoves, 22);
     assert.equal(solvedCount(reloaded, 'tutorial'), 3);
+  });
+
+  /**
+   * The other half of that promise, and the one that is easy to miss.
+   *
+   * The packs are difficulty tiers cut from one measured curve, so shipping
+   * more puzzles moves the cut points and a level a child has already beaten
+   * can end up in a different pack. Records are keyed by (packId, levelId), so
+   * without `reconcile` every such level reads as unsolved again - which is
+   * exactly what shipping Microban II and III did to the original three packs.
+   */
+  describe('reconcile', () => {
+    const cursors = (...pairs: [string, string][]): LevelCursor[] =>
+      pairs.map(([packId, levelId]) => ({ packId, levelId }));
+
+    test('follows a level that moved to another pack', () => {
+      const p = emptyProgress();
+      recordWin(p, 'microban1', 'm044', 9, 1);
+      recordSkip(p, 'microban1', 'm054');
+      recordPosition(p, 'microban1', 'm044');
+
+      // m044 now lives in pack1, m054 in pack5.
+      const moved = reconcile(
+        p,
+        cursors(['pack1', 'm044'], ['pack5', 'm054']),
+      );
+
+      assert.equal(moved, true);
+      assert.equal(isSolved(p, 'pack1', 'm044'), true);
+      assert.equal(p.packs.pack1.levels.m044.bestMoves, 9);
+      assert.equal(p.packs.pack5.levels.m054.skipped, true);
+      assert.equal(p.packs.microban1, undefined, 'retired pack should be gone');
+      assert.equal(p.settings.lastPack, 'pack1', 'resume pointer follows too');
+    });
+
+    test('is a no-op once everything is where it belongs', () => {
+      const p = emptyProgress();
+      recordWin(p, 'pack1', 'm044', 9, 1);
+      assert.equal(reconcile(p, cursors(['pack1', 'm044'])), false);
+      assert.equal(isSolved(p, 'pack1', 'm044'), true);
+    });
+
+    test('keeps the better record when both packs have one', () => {
+      const p = emptyProgress();
+      recordWin(p, 'microban1', 'm044', 30, 4);
+      recordWin(p, 'pack1', 'm044', 9, 1);
+
+      reconcile(p, cursors(['pack1', 'm044']));
+
+      assert.equal(p.packs.pack1.levels.m044.bestMoves, 9);
+      assert.equal(p.packs.pack1.levels.m044.bestPushes, 1);
+    });
+
+    /**
+     * A `--levels` pack is data from outside the program, and nothing stops it
+     * reusing a bundled level id. Moving a record on that basis would hand a
+     * stranger's puzzle a child's star, so an id in two loaded packs is left
+     * exactly where it is.
+     */
+    test('leaves ambiguous and unknown level ids alone', () => {
+      const p = emptyProgress();
+      recordWin(p, 'microban1', 'm044', 9, 1);
+      recordWin(p, 'microban1', 'm002', 12, 3);
+
+      const changed = reconcile(
+        p,
+        // m044 is in two loaded packs; m002 is in none of them.
+        cursors(['pack1', 'm044'], ['mine', 'm044'], ['pack1', 'x01']),
+      );
+
+      assert.equal(changed, false);
+      assert.equal(isSolved(p, 'microban1', 'm044'), true);
+      assert.equal(isSolved(p, 'microban1', 'm002'), true);
+    });
   });
 
   test('skipping is not a penalty and keeps the level replayable', () => {

@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "id": "pack3",
+  "name": "Getting Tricky",
+  "author": "David W. Skinner",
+  "attribution": "Puzzles from Microban by David W. Skinner, used with credit.",
+  "order": 3,
+  "levels": [
+    {
+      "id": "m3-083",
+      "file": "m3-083.sok",
+      "title": "The Wide Cross",
+      "pushes": 8
+    },
+    {
+      "id": "m2-015",
+      "file": "m2-015.sok",
+      "title": "Nudge Them Along",
+      "pushes": 11
+    },
+    {
+      "id": "m3-082",
+      "file": "m3-082.sok",
+      "title": "The Crooked Cross",
+      "pushes": 14
+    },
+    {
+      "id": "m3-066",
+      "file": "m3-066.sok",
+      "title": "The Zigzag Slots",
+      "pushes": 11
+    },
+    {
+      "id": "m2-039",
+      "file": "m2-039.sok",
+      "title": "The Little Loop",
+      "pushes": 13
+    },
+    {
+      "id": "m022",
+      "file": "m022.sok",
+      "title": "Around the Post",
+      "pushes": 15
+    },
+    {
+      "id": "m3-093",
+      "file": "m3-093.sok",
+      "title": "The Diagonal",
+      "pushes": 12
+    },
+    {
+      "id": "m026",
+      "file": "m026.sok",
+      "title": "Three Together",
+      "pushes": 10
+    },
+    {
+      "id": "m008",
+      "file": "m008.sok",
+      "title": "The Long Way Home",
+      "pushes": 32
+    },
+    {
+      "id": "m2-009",
+      "file": "m2-009.sok",
+      "title": "Between the Walls",
+      "pushes": 6
+    },
+    {
+      "id": "m039",
+      "file": "m039.sok",
+      "title": "Two Little Doors",
+      "pushes": 27
+    },
+    {
+      "id": "m3-065",
+      "file": "m3-065.sok",
+      "title": "Every Other One",
+      "pushes": 13
+    },
+    {
+      "id": "m3-086",
+      "file": "m3-086.sok",
+      "title": "The Little Step",
+      "pushes": 16
+    },
+    {
+      "id": "m2-056",
+      "file": "m2-056.sok",
+      "title": "The Middle Squeeze",
+      "pushes": 18
+    },
+    {
+      "id": "m010",
+      "file": "m010.sok",
+      "title": "The Ladder",
+      "pushes": 21
+    },
+    {
+      "id": "m3-067",
+      "file": "m3-067.sok",
+      "title": "In Turn",
+      "pushes": 9
+    },
+    {
+      "id": "m047",
+      "file": "m047.sok",
+      "title": "Four Corners",
+      "pushes": 22
+    },
+    {
+      "id": "m2-025",
+      "file": "m2-025.sok",
+      "title": "The Plus Sign",
+      "pushes": 6
+    },
+    {
+      "id": "m053",
+      "file": "m053.sok",
+      "title": "The Diamond",
+      "pushes": 12
+    },
+    {
+      "id": "m2-036",
+      "file": "m2-036.sok",
+      "title": "The Straight Push",
+      "pushes": 13
+    },
+    {
+      "id": "m3-069",
+      "file": "m3-069.sok",
+      "title": "The Tall Stack",
+      "pushes": 21
+    },
+    {
+      "id": "m2-021",
+      "file": "m2-021.sok",
+      "title": "The Long Climb",
+      "pushes": 32
+    },
+    {
+      "id": "m045",
+      "file": "m045.sok",
+      "title": "Mind the Post",
+      "pushes": 11
+    },
+    {
+      "id": "m3-085",
+      "file": "m3-085.sok",
+      "title": "The Three Steps",
+      "pushes": 20
+    },
+    {
+      "id": "m2-028",
+      "file": "m2-028.sok",
+      "title": "Along the Top",
+      "pushes": 14
+    },
+    {
+      "id": "m3-077",
+      "file": "m3-077.sok",
+      "title": "Two Over Two",
+      "pushes": 19
+    },
+    {
+      "id": "m2-008",
+      "file": "m2-008.sok",
+      "title": "Through the Middle",
+      "pushes": 11
+    },
+    {
+      "id": "m3-089",
+      "file": "m3-089.sok",
+      "title": "One Each Way",
+      "pushes": 12
+    },
+    {
+      "id": "m3-074",
+      "file": "m3-074.sok",
+      "title": "The Twisty Bit",
+      "pushes": 16
+    },
+    {
+      "id": "m2-042",
+      "file": "m2-042.sok",
+      "title": "Three to the Left",
+      "pushes": 23
+    },
+    {
+      "id": "m3-095",
+      "file": "m3-095.sok",
+      "title": "Across the Slant",
+      "pushes": 12
+    }
+  ]
+}

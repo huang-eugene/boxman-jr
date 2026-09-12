@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "id": "pack4",
+  "name": "Think It Through",
+  "author": "David W. Skinner",
+  "attribution": "Puzzles from Microban by David W. Skinner, used with credit.",
+  "order": 4,
+  "levels": [
+    {
+      "id": "m3-063",
+      "file": "m3-063.sok",
+      "title": "Up the Slots",
+      "pushes": 17
+    },
+    {
+      "id": "m3-094",
+      "file": "m3-094.sok",
+      "title": "The Slanted Pair",
+      "pushes": 12
+    },
+    {
+      "id": "m3-073",
+      "file": "m3-073.sok",
+      "title": "The Crooked Hall",
+      "pushes": 16
+    },
+    {
+      "id": "m3-070",
+      "file": "m3-070.sok",
+      "title": "Over the Wall",
+      "pushes": 13
+    },
+    {
+      "id": "m2-040",
+      "file": "m2-040.sok",
+      "title": "Straight Down",
+      "pushes": 11
+    },
+    {
+      "id": "m081",
+      "file": "m081.sok",
+      "title": "Single File",
+      "pushes": 12
+    },
+    {
+      "id": "m2-022",
+      "file": "m2-022.sok",
+      "title": "The Far Room",
+      "pushes": 30
+    },
+    {
+      "id": "m3-076",
+      "file": "m3-076.sok",
+      "title": "The Bent Corridor",
+      "pushes": 16
+    },
+    {
+      "id": "m3-061",
+      "file": "m3-061.sok",
+      "title": "Slot by Slot",
+      "pushes": 9
+    },
+    {
+      "id": "m3-075",
+      "file": "m3-075.sok",
+      "title": "Up the Narrow Hall",
+      "pushes": 18
+    },
+    {
+      "id": "m2-019",
+      "file": "m2-019.sok",
+      "title": "Three on the Right",
+      "pushes": 15
+    },
+    {
+      "id": "m2-018",
+      "file": "m2-018.sok",
+      "title": "Two Rooms Down",
+      "pushes": 19
+    },
+    {
+      "id": "m042",
+      "file": "m042.sok",
+      "title": "Three on the Wall",
+      "pushes": 15
+    },
+    {
+      "id": "m3-099",
+      "file": "m3-099.sok",
+      "title": "The Snug Corner",
+      "pushes": 20
+    },
+    {
+      "id": "m3-087",
+      "file": "m3-087.sok",
+      "title": "Step by Step",
+      "pushes": 16
+    },
+    {
+      "id": "m3-096",
+      "file": "m3-096.sok",
+      "title": "The Tilted Room",
+      "pushes": 20
+    },
+    {
+      "id": "m2-024",
+      "file": "m2-024.sok",
+      "title": "The Big Loop",
+      "pushes": 35
+    },
+    {
+      "id": "m2-023",
+      "file": "m2-023.sok",
+      "title": "The Two Wings",
+      "pushes": 36
+    },
+    {
+      "id": "m3-049",
+      "file": "m3-049.sok",
+      "title": "The Swap",
+      "pushes": 13
+    },
+    {
+      "id": "m3-098",
+      "file": "m3-098.sok",
+      "title": "The Huddle Upstairs",
+      "pushes": 24
+    },
+    {
+      "id": "m3-005",
+      "file": "m3-005.sok",
+      "title": "Sweep Them In",
+      "pushes": 20
+    },
+    {
+      "id": "m071",
+      "file": "m071.sok",
+      "title": "The Courtyard",
+      "pushes": 21
+    },
+    {
+      "id": "m2-053",
+      "file": "m2-053.sok",
+      "title": "Three at the Top",
+      "pushes": 18
+    },
+    {
+      "id": "m013",
+      "file": "m013.sok",
+      "title": "Stack Them Up",
+      "pushes": 21
+    },
+    {
+      "id": "m041",
+      "file": "m041.sok",
+      "title": "Neat and Tidy",
+      "pushes": 13
+    },
+    {
+      "id": "m061",
+      "file": "m061.sok",
+      "title": "The Basement",
+      "pushes": 21
+    },
+    {
+      "id": "m037",
+      "file": "m037.sok",
+      "title": "The Chimney",
+      "pushes": 23
+    },
+    {
+      "id": "m3-050",
+      "file": "m3-050.sok",
+      "title": "The Second Swap",
+      "pushes": 19
+    },
+    {
+      "id": "m3-001",
+      "file": "m3-001.sok",
+      "title": "Three in the Hall",
+      "pushes": 23
+    },
+    {
+      "id": "m004",
+      "file": "m004.sok",
+      "title": "Push the Line",
+      "pushes": 7
+    },
+    {
+      "id": "m033",
+      "file": "m033.sok",
+      "title": "Three Doors",
+      "pushes": 10
+    }
+  ]
+}

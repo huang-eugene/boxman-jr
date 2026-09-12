@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "id": "pack7",
+  "name": "For Real Experts",
+  "author": "David W. Skinner",
+  "attribution": "Puzzles from Microban by David W. Skinner, used with credit.",
+  "order": 7,
+  "levels": [
+    {
+      "id": "m2-062",
+      "file": "m2-062.sok",
+      "title": "The Four Nooks",
+      "pushes": 20
+    },
+    {
+      "id": "m136",
+      "file": "m136.sok",
+      "title": "Left and Right",
+      "pushes": 25
+    },
+    {
+      "id": "m132",
+      "file": "m132.sok",
+      "title": "The Top Corner",
+      "pushes": 37
+    },
+    {
+      "id": "m142",
+      "file": "m142.sok",
+      "title": "The Flower",
+      "pushes": 20
+    },
+    {
+      "id": "m062",
+      "file": "m062.sok",
+      "title": "The Long Hall",
+      "pushes": 30
+    },
+    {
+      "id": "m2-080",
+      "file": "m2-080.sok",
+      "title": "The Far Four",
+      "pushes": 31
+    },
+    {
+      "id": "m075",
+      "file": "m075.sok",
+      "title": "Four in a Row",
+      "pushes": 34
+    },
+    {
+      "id": "m3-051",
+      "file": "m3-051.sok",
+      "title": "The Crossing",
+      "pushes": 25
+    },
+    {
+      "id": "m074",
+      "file": "m074.sok",
+      "title": "The Narrow Way",
+      "pushes": 34
+    },
+    {
+      "id": "m3-014",
+      "file": "m3-014.sok",
+      "title": "Four to the Middle",
+      "pushes": 34
+    },
+    {
+      "id": "m3-037",
+      "file": "m3-037.sok",
+      "title": "Four Along the Row",
+      "pushes": 34
+    },
+    {
+      "id": "m2-079",
+      "file": "m2-079.sok",
+      "title": "Four Down the Side",
+      "pushes": 22
+    },
+    {
+      "id": "m3-017",
+      "file": "m3-017.sok",
+      "title": "The Wide Room",
+      "pushes": 36
+    },
+    {
+      "id": "m069",
+      "file": "m069.sok",
+      "title": "Four Rooms",
+      "pushes": 37
+    },
+    {
+      "id": "m127",
+      "file": "m127.sok",
+      "title": "Right in the Middle",
+      "pushes": 32
+    },
+    {
+      "id": "m080",
+      "file": "m080.sok",
+      "title": "Up and Around",
+      "pushes": 38
+    },
+    {
+      "id": "m3-045",
+      "file": "m3-045.sok",
+      "title": "The Four Pillars",
+      "pushes": 26
+    },
+    {
+      "id": "m152",
+      "file": "m152.sok",
+      "title": "The Maze",
+      "pushes": 35
+    },
+    {
+      "id": "m124",
+      "file": "m124.sok",
+      "title": "The Great Hall",
+      "pushes": 39
+    },
+    {
+      "id": "m070",
+      "file": "m070.sok",
+      "title": "Two Pairs",
+      "pushes": 26
+    },
+    {
+      "id": "m090",
+      "file": "m090.sok",
+      "title": "Meet in the Middle",
+      "pushes": 16
+    },
+    {
+      "id": "m2-045",
+      "file": "m2-045.sok",
+      "title": "The Four Square",
+      "pushes": 40
+    },
+    {
+      "id": "m131",
+      "file": "m131.sok",
+      "title": "Up to the Top",
+      "pushes": 31
+    },
+    {
+      "id": "m089",
+      "file": "m089.sok",
+      "title": "The Deep Room",
+      "pushes": 35
+    },
+    {
+      "id": "m135",
+      "file": "m135.sok",
+      "title": "Round the Houses",
+      "pushes": 36
+    },
+    {
+      "id": "m125",
+      "file": "m125.sok",
+      "title": "The Winding Way",
+      "pushes": 38
+    },
+    {
+      "id": "m054",
+      "file": "m054.sok",
+      "title": "The Grand Tour",
+      "pushes": 30
+    },
+    {
+      "id": "m2-063",
+      "file": "m2-063.sok",
+      "title": "The Grand Sweep",
+      "pushes": 40
+    },
+    {
+      "id": "m130",
+      "file": "m130.sok",
+      "title": "The Last Push",
+      "pushes": 36
+    },
+    {
+      "id": "m2-081",
+      "file": "m2-081.sok",
+      "title": "The Big House",
+      "pushes": 36
+    },
+    {
+      "id": "m3-008",
+      "file": "m3-008.sok",
+      "title": "The Five Slots",
+      "pushes": 34
+    }
+  ]
+}

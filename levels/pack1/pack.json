@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "id": "pack1",
+  "name": "Warming Up",
+  "author": "David W. Skinner",
+  "attribution": "Puzzles from Microban by David W. Skinner, used with credit.",
+  "order": 1,
+  "levels": [
+    {
+      "id": "m044",
+      "file": "m044.sok",
+      "title": "Easy Does It",
+      "pushes": 1
+    },
+    {
+      "id": "m002",
+      "file": "m002.sok",
+      "title": "Two in the Corner",
+      "pushes": 3
+    },
+    {
+      "id": "m056",
+      "file": "m056.sok",
+      "title": "Room to Turn",
+      "pushes": 6
+    },
+    {
+      "id": "m001",
+      "file": "m001.sok",
+      "title": "The Little Room",
+      "pushes": 8
+    },
+    {
+      "id": "m009",
+      "file": "m009.sok",
+      "title": "Two Ways Out",
+      "pushes": 10
+    },
+    {
+      "id": "m046",
+      "file": "m046.sok",
+      "title": "Through the Gap",
+      "pushes": 8
+    },
+    {
+      "id": "m2-002",
+      "file": "m2-002.sok",
+      "title": "One More to Go",
+      "pushes": 7
+    },
+    {
+      "id": "m023",
+      "file": "m023.sok",
+      "title": "Middle Ground",
+      "pushes": 10
+    },
+    {
+      "id": "m2-007",
+      "file": "m2-007.sok",
+      "title": "Round Two Bends",
+      "pushes": 9
+    },
+    {
+      "id": "m021",
+      "file": "m021.sok",
+      "title": "Side by Side",
+      "pushes": 5
+    },
+    {
+      "id": "m3-092",
+      "file": "m3-092.sok",
+      "title": "Three at Your Feet",
+      "pushes": 6
+    },
+    {
+      "id": "m012",
+      "file": "m012.sok",
+      "title": "The Long Way",
+      "pushes": 11
+    },
+    {
+      "id": "m030",
+      "file": "m030.sok",
+      "title": "Three in a Row",
+      "pushes": 5
+    },
+    {
+      "id": "m067",
+      "file": "m067.sok",
+      "title": "In and Out",
+      "pushes": 8
+    },
+    {
+      "id": "m014",
+      "file": "m014.sok",
+      "title": "Past the Pillars",
+      "pushes": 10
+    },
+    {
+      "id": "m2-014",
+      "file": "m2-014.sok",
+      "title": "Three in a Column",
+      "pushes": 9
+    },
+    {
+      "id": "m032",
+      "file": "m032.sok",
+      "title": "All in a Line",
+      "pushes": 9
+    },
+    {
+      "id": "m051",
+      "file": "m051.sok",
+      "title": "Squeeze Past",
+      "pushes": 8
+    },
+    {
+      "id": "m031",
+      "file": "m031.sok",
+      "title": "Little Cluster",
+      "pushes": 6
+    },
+    {
+      "id": "m3-084",
+      "file": "m3-084.sok",
+      "title": "The Flat Cross",
+      "pushes": 10
+    },
+    {
+      "id": "m027",
+      "file": "m027.sok",
+      "title": "Round the Bend",
+      "pushes": 10
+    },
+    {
+      "id": "m015",
+      "file": "m015.sok",
+      "title": "Up and Over",
+      "pushes": 12
+    },
+    {
+      "id": "m3-100",
+      "file": "m3-100.sok",
+      "title": "The Tidy Huddle",
+      "pushes": 8
+    },
+    {
+      "id": "m2-001",
+      "file": "m2-001.sok",
+      "title": "Two Along the Row",
+      "pushes": 16
+    },
+    {
+      "id": "m2-006",
+      "file": "m2-006.sok",
+      "title": "The Far Crate",
+      "pushes": 16
+    },
+    {
+      "id": "m025",
+      "file": "m025.sok",
+      "title": "Nearly There",
+      "pushes": 7
+    },
+    {
+      "id": "m028",
+      "file": "m028.sok",
+      "title": "The Pair",
+      "pushes": 9
+    },
+    {
+      "id": "m3-002",
+      "file": "m3-002.sok",
+      "title": "Two and One",
+      "pushes": 11
+    },
+    {
+      "id": "m024",
+      "file": "m024.sok",
+      "title": "Two Below",
+      "pushes": 9
+    },
+    {
+      "id": "m2-005",
+      "file": "m2-005.sok",
+      "title": "Down to the Corner",
+      "pushes": 18
+    },
+    {
+      "id": "m2-011",
+      "file": "m2-011.sok",
+      "title": "The Tight Corner",
+      "pushes": 10
+    }
+  ]
+}

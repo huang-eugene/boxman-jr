@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "id": "pack5",
+  "name": "Proper Puzzles",
+  "author": "David W. Skinner",
+  "attribution": "Puzzles from Microban by David W. Skinner, used with credit.",
+  "order": 5,
+  "levels": [
+    {
+      "id": "m043",
+      "file": "m043.sok",
+      "title": "The Store Room",
+      "pushes": 22
+    },
+    {
+      "id": "m2-128",
+      "file": "m2-128.sok",
+      "title": "The Long Line",
+      "pushes": 14
+    },
+    {
+      "id": "m068",
+      "file": "m068.sok",
+      "title": "The Side Room",
+      "pushes": 28
+    },
+    {
+      "id": "m2-013",
+      "file": "m2-013.sok",
+      "title": "Under the Big Room",
+      "pushes": 24
+    },
+    {
+      "id": "m2-033",
+      "file": "m2-033.sok",
+      "title": "The Narrow Squeeze",
+      "pushes": 16
+    },
+    {
+      "id": "m2-052",
+      "file": "m2-052.sok",
+      "title": "From Upstairs",
+      "pushes": 19
+    },
+    {
+      "id": "m2-016",
+      "file": "m2-016.sok",
+      "title": "The Long Detour",
+      "pushes": 24
+    },
+    {
+      "id": "m2-038",
+      "file": "m2-038.sok",
+      "title": "Three Up",
+      "pushes": 14
+    },
+    {
+      "id": "m079",
+      "file": "m079.sok",
+      "title": "Cross Over",
+      "pushes": 18
+    },
+    {
+      "id": "m2-037",
+      "file": "m2-037.sok",
+      "title": "The Right-Hand Wall",
+      "pushes": 28
+    },
+    {
+      "id": "m2-106",
+      "file": "m2-106.sok",
+      "title": "The Winding Four",
+      "pushes": 28
+    },
+    {
+      "id": "m3-021",
+      "file": "m3-021.sok",
+      "title": "Up to the Landing",
+      "pushes": 37
+    },
+    {
+      "id": "m3-004",
+      "file": "m3-004.sok",
+      "title": "The Narrow Three",
+      "pushes": 12
+    },
+    {
+      "id": "m3-013",
+      "file": "m3-013.sok",
+      "title": "Three and One",
+      "pushes": 23
+    },
+    {
+      "id": "m2-122",
+      "file": "m2-122.sok",
+      "title": "Four Together",
+      "pushes": 16
+    },
+    {
+      "id": "m2-049",
+      "file": "m2-049.sok",
+      "title": "The Ring",
+      "pushes": 10
+    },
+    {
+      "id": "m048",
+      "file": "m048.sok",
+      "title": "Tuck Them In",
+      "pushes": 14
+    },
+    {
+      "id": "m3-003",
+      "file": "m3-003.sok",
+      "title": "Three Alcoves",
+      "pushes": 11
+    },
+    {
+      "id": "m119",
+      "file": "m119.sok",
+      "title": "The Back Room",
+      "pushes": 18
+    },
+    {
+      "id": "m052",
+      "file": "m052.sok",
+      "title": "Top and Tail",
+      "pushes": 8
+    },
+    {
+      "id": "m3-071",
+      "file": "m3-071.sok",
+      "title": "Four Straight Up",
+      "pushes": 14
+    },
+    {
+      "id": "m104",
+      "file": "m104.sok",
+      "title": "Middle Muddle",
+      "pushes": 27
+    },
+    {
+      "id": "m2-057",
+      "file": "m2-057.sok",
+      "title": "The Big Cluster",
+      "pushes": 14
+    },
+    {
+      "id": "m2-012",
+      "file": "m2-012.sok",
+      "title": "Two Columns",
+      "pushes": 32
+    },
+    {
+      "id": "m2-043",
+      "file": "m2-043.sok",
+      "title": "The Two Nooks",
+      "pushes": 23
+    },
+    {
+      "id": "m3-064",
+      "file": "m3-064.sok",
+      "title": "The Far Slots",
+      "pushes": 37
+    },
+    {
+      "id": "m2-088",
+      "file": "m2-088.sok",
+      "title": "Four at the Top",
+      "pushes": 22
+    },
+    {
+      "id": "m094",
+      "file": "m094.sok",
+      "title": "Down the Middle",
+      "pushes": 29
+    },
+    {
+      "id": "m3-048",
+      "file": "m3-048.sok",
+      "title": "The Double Pair",
+      "pushes": 20
+    },
+    {
+      "id": "m2-032",
+      "file": "m2-032.sok",
+      "title": "Down the Chute",
+      "pushes": 24
+    },
+    {
+      "id": "m103",
+      "file": "m103.sok",
+      "title": "Round and Round",
+      "pushes": 12
+    }
+  ]
+}
