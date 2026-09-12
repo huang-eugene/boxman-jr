@@ -176,3 +176,60 @@ export function solvedCount(progress: Progress, packId: string): number {
   for (const rec of Object.values(pack.levels)) if (rec.solved) n++;
   return n;
 }
+
+/** Just enough of a level to locate its progress record. */
+export interface LevelCursor {
+  packId: string;
+  levelId: string;
+}
+
+/**
+ * Decide which level to open the game on.
+ *
+ * The rule that matters: this must agree with what the title screen tells the
+ * player. "You have solved 3 puzzles" followed by landing on puzzle 12 reads as
+ * a bug, because it is one - the old behaviour resumed at the last level
+ * *visited*, so one trip through the level menu (or one "try a different
+ * puzzle") stranded the player miles ahead of their progress, permanently.
+ *
+ * So we resume at the next puzzle they have yet to beat, in pack order:
+ *
+ *   1. The first puzzle they have neither solved nor skipped.
+ *   2. Otherwise the first they have not solved - a skipped one, offered again
+ *      now they have more of the game behind them.
+ *   3. Otherwise (everything solved) wherever they were, so replaying works.
+ *
+ * Note there is deliberately no "carry on exactly where you left off" rule.
+ * In the ordinary run of play it makes no difference - the puzzle you are part
+ * way through IS the first one you have not solved - and the only time it
+ * differs is when the player jumped somewhere out of order, which is precisely
+ * the case that used to strand them. A jump is a choice for the session they
+ * made it in; the level menu is one keypress away when they want it again.
+ */
+export function resumeIndex(
+  cursors: readonly LevelCursor[],
+  progress: Progress,
+): number {
+  if (cursors.length === 0) return 0;
+
+  const rec = (i: number): LevelRecord | undefined =>
+    getRecord(progress, cursors[i].packId, cursors[i].levelId);
+
+  // 1. The next genuinely new puzzle.
+  const fresh = cursors.findIndex(
+    (_, i) => rec(i)?.solved !== true && rec(i)?.skipped !== true,
+  );
+  if (fresh !== -1) return fresh;
+
+  // 2. Nothing new left, but something was skipped - have another go at it.
+  const unsolved = cursors.findIndex((_, i) => rec(i)?.solved !== true);
+  if (unsolved !== -1) return unsolved;
+
+  // 3. All done. Stay where they were so replaying a favourite works.
+  const saved = cursors.findIndex(
+    (c) =>
+      c.packId === progress.settings.lastPack &&
+      c.levelId === progress.settings.lastLevel,
+  );
+  return saved !== -1 ? saved : cursors.length - 1;
+}

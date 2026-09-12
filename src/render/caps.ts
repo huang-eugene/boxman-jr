@@ -30,6 +30,8 @@ export interface CapsOptions {
   forceColor?: ColorMode;
   /** --blocks=off */
   forceNoBlocks?: boolean;
+  /** --pixel-art / --blocks=on: demand pixel art and ignore a saved "ascii". */
+  forceBlocks?: boolean;
   /** Persisted answer from a previous run, if any. */
   savedGlyphMode?: GlyphMode;
   env?: NodeJS.ProcessEnv;
@@ -49,6 +51,13 @@ export function detectColor(opts: CapsOptions = {}): ColorMode {
   // every heuristic below, including the TTY check. --selftest relies on this
   // so its output can be inspected through a pipe.
   if (opts.forceColor) return opts.forceColor;
+  // --pixel-art is the user saying "this terminal can do it" after we guessed
+  // wrong, so it outranks the heuristics too - but not NO_COLOR, which is a
+  // deliberate, standardised instruction rather than a guess of ours.
+  if (opts.forceBlocks && (env.NO_COLOR === undefined || env.NO_COLOR === '')) {
+    const wanted = (env.COLORTERM ?? '').toLowerCase();
+    return wanted === 'truecolor' || wanted === '24bit' ? 'truecolor' : 'ansi256';
+  }
   // NO_COLOR is honoured for any value, per the no-color.org convention.
   if (env.NO_COLOR !== undefined && env.NO_COLOR !== '') return 'ascii';
   // Piped or redirected output must never contain escape sequences.
@@ -69,7 +78,13 @@ export function detectColor(opts: CapsOptions = {}): ColorMode {
   }
 
   const term = (env.TERM ?? '').toLowerCase();
-  if (term === 'dumb' || term === '') return 'ascii';
+  // TERM=dumb is a terminal telling us it cannot do this. An *unset* TERM on a
+  // real TTY is just a thin environment (a launcher, an IDE terminal), and
+  // dropping such a player all the way to plain text - the loudest possible
+  // downgrade - over a missing variable is the wrong call. Basic ANSI colour is
+  // near-universal on anything that is a TTY at all.
+  if (term === 'dumb') return 'ascii';
+  if (term === '') return 'ansi16';
   if (term.includes('256color')) return 'ansi256';
   if (term.includes('truecolor') || term.includes('direct')) return 'truecolor';
 
@@ -95,6 +110,12 @@ export function detectCaps(opts: CapsOptions = {}): Caps {
 
   if (color === 'ascii' || opts.forceNoBlocks) {
     return { color, glyphs: 'ascii', needsCalibration: false };
+  }
+
+  // The escape hatch. A saved "ascii" is a remembered answer, and a player who
+  // asks for pixel art outright has just given us a newer one.
+  if (opts.forceBlocks) {
+    return { color, glyphs: 'blocks', needsCalibration: false };
   }
 
   if (opts.savedGlyphMode) {

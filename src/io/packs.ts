@@ -155,13 +155,9 @@ export function flatten(packs: Pack[]): LevelRef[] {
   return refs;
 }
 
-export function findRef(
-  refs: LevelRef[],
-  packId: string | undefined,
-  levelId: string | undefined,
-): LevelRef | undefined {
-  if (!packId || !levelId) return undefined;
-  return refs.find(
-    (r) => r.pack.manifest.id === packId && r.level.id === levelId,
-  );
-}
+/**
+ * Note there is deliberately no "find the level the player last saved"
+ * helper here. Opening the game on that level is what stranded players
+ * ahead of their own progress; where to resume is a progress question, and
+ * `resumeIndex` in core/progress.ts answers it.
+ */

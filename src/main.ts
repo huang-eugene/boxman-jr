@@ -6,8 +6,9 @@
  * level packs, and hand off to the app.
  */
 
-import { flatten, loadPacks, findRef, type Pack } from './io/packs.js';
+import { flatten, loadPacks, type Pack } from './io/packs.js';
 import { loadProgress, saveProgress, progressPath } from './io/store.js';
+import { resumeIndex } from './core/progress.js';
 import { enterGameMode, out, restore, terminalSize, ansi } from './io/term.js';
 import { detectCaps, type ColorMode, type GlyphMode } from './render/caps.js';
 import { paint } from './render/color.js';
@@ -19,27 +20,32 @@ import { fitsAtMinimumTile } from './render/board.js';
 interface Args {
   ascii: boolean;
   noBlocks: boolean;
+  blocks: boolean;
   color?: ColorMode;
   levels?: string;
   selftest: boolean;
   help: boolean;
   version: boolean;
   reset: boolean;
+  resetGraphics: boolean;
 }
 
 function parseArgs(argv: string[]): Args {
   const args: Args = {
     ascii: false,
     noBlocks: false,
+    blocks: false,
     selftest: false,
     help: false,
     version: false,
     reset: false,
+    resetGraphics: false,
   };
 
   for (const arg of argv) {
     if (arg === '--ascii') args.ascii = true;
     else if (arg === '--blocks=off') args.noBlocks = true;
+    else if (arg === '--blocks=on' || arg === '--pixel-art') args.blocks = true;
     else if (arg.startsWith('--color=')) {
       args.color = arg.slice(8) as ColorMode;
     } else if (arg.startsWith('--levels=')) args.levels = arg.slice(9);
@@ -47,6 +53,7 @@ function parseArgs(argv: string[]): Args {
     else if (arg === '--help' || arg === '-h') args.help = true;
     else if (arg === '--version' || arg === '-v') args.version = true;
     else if (arg === '--reset-progress') args.reset = true;
+    else if (arg === '--reset-graphics') args.resetGraphics = true;
   }
 
   return args;
@@ -61,9 +68,11 @@ boxman-jr - a friendly crate-pushing puzzle game for kids
 
 Options
   --ascii              use plain ASCII instead of pixel art
+  --pixel-art          force pixel art back on (same as --blocks=on)
   --blocks=off         keep colour, but no half-block graphics
   --color=MODE         truecolor | ansi256 | ansi16 | ascii
   --levels=DIR         load level packs from your own directory
+  --reset-graphics     forget the saved graphics choice, keeping puzzle progress
   --reset-progress     start again from the very first puzzle
   --version            print the version
   --help               show this
@@ -149,6 +158,15 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (args.resetGraphics) {
+    progress.settings.glyphMode = undefined;
+    saveProgress(progress);
+    console.log(
+      `Graphics choice forgotten; puzzle progress kept. (${progressPath()})`,
+    );
+    return;
+  }
+
   let packs: Pack[];
   try {
     packs = loadPacks(args.levels);
@@ -172,12 +190,20 @@ async function main(): Promise<void> {
     forceAscii: args.ascii,
     forceColor: args.color,
     forceNoBlocks: args.noBlocks,
+    forceBlocks: args.blocks,
     savedGlyphMode: progress.settings.glyphMode,
   });
 
   if (args.selftest) {
     selftest(caps.color);
     return;
+  }
+
+  // --pixel-art exists to undo a wrong answer we remembered, so remember the
+  // correction too rather than making the player pass the flag forever.
+  if (args.blocks && progress.settings.glyphMode !== 'blocks') {
+    progress.settings.glyphMode = 'blocks';
+    saveProgress(progress);
   }
 
   // Warn (but keep going) if a level is too big for this window - the kid can
@@ -214,10 +240,9 @@ async function main(): Promise<void> {
     });
   }
 
-  const resume = findRef(
-    refs,
-    progress.settings.lastPack,
-    progress.settings.lastLevel,
+  const startAt = resumeIndex(
+    refs.map((r) => ({ packId: r.pack.manifest.id, levelId: r.level.id })),
+    progress,
   );
 
   const app = new App({
@@ -225,7 +250,7 @@ async function main(): Promise<void> {
     packs,
     progress,
     caps,
-    startAt: resume?.index ?? 0,
+    startAt,
     recoveredFrom: loaded.recoveredFrom,
   });
 

@@ -5,8 +5,11 @@ import {
   normalise,
   recordWin,
   recordSkip,
+  recordPosition,
+  resumeIndex,
   isSolved,
   solvedCount,
+  type LevelCursor,
 } from '../src/core/progress.js';
 
 describe('progress', () => {
@@ -56,6 +59,71 @@ describe('progress', () => {
     // Coming back later and solving it still works.
     recordWin(p, 'tutorial', 't05', 18, 6);
     assert.equal(isSolved(p, 'tutorial', 't05'), true);
+  });
+
+  /**
+   * The invariant behind all of these: whatever the title screen's "you have
+   * solved N" says, pressing a key must land the player on a puzzle that makes
+   * sense next to that number. The old rule - resume wherever you last stood -
+   * broke it, which read to players as the game losing their progress.
+   */
+  describe('resumeIndex', () => {
+    const cursors: LevelCursor[] = Array.from({ length: 8 }, (_, i) => ({
+      packId: 'tutorial',
+      levelId: `t0${i + 1}`,
+    }));
+
+    test('a brand new player starts at the very first puzzle', () => {
+      assert.equal(resumeIndex(cursors, emptyProgress()), 0);
+    });
+
+    test('resumes on the first unsolved puzzle', () => {
+      const p = emptyProgress();
+      recordWin(p, 'tutorial', 't01', 5, 2);
+      recordWin(p, 'tutorial', 't02', 5, 2);
+      recordPosition(p, 'tutorial', 't03');
+      assert.equal(resumeIndex(cursors, p), 2);
+    });
+
+    test('a jump through the level menu does not strand the player', () => {
+      // Solve one puzzle, then wander off to puzzle 7 via the menu and quit
+      // there. Next launch must not open on puzzle 7 while announcing "solved 1".
+      const p = emptyProgress();
+      recordWin(p, 'tutorial', 't01', 3, 1);
+      recordPosition(p, 'tutorial', 't07');
+      assert.equal(resumeIndex(cursors, p), 1);
+    });
+
+    test('skipped puzzles are stepped over, then offered again at the end', () => {
+      const p = emptyProgress();
+      recordWin(p, 'tutorial', 't01', 3, 1);
+      recordSkip(p, 'tutorial', 't02');
+      assert.equal(resumeIndex(cursors, p), 2, 'skips past the skipped one');
+
+      // Once everything else is done, the skipped puzzle comes back round.
+      for (const id of ['t03', 't04', 't05', 't06', 't07', 't08']) {
+        recordWin(p, 'tutorial', id, 5, 2);
+      }
+      assert.equal(resumeIndex(cursors, p), 1);
+    });
+
+    test('a finished game stays where the player left off', () => {
+      const p = emptyProgress();
+      for (const c of cursors) recordWin(p, c.packId, c.levelId, 5, 2);
+      recordPosition(p, 'tutorial', 't04');
+      assert.equal(resumeIndex(cursors, p), 3);
+    });
+
+    test('a saved level that no longer exists does not break resuming', () => {
+      const p = emptyProgress();
+      for (const c of cursors) recordWin(p, c.packId, c.levelId, 5, 2);
+      recordPosition(p, 'tutorial', 'retired-level');
+      assert.equal(resumeIndex(cursors, p), cursors.length - 1);
+    });
+
+    test('handles an empty level list', () => {
+      assert.equal(resumeIndex([], emptyProgress()), 0);
+    });
   });
 
   describe('normalise', () => {
