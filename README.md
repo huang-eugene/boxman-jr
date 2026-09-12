@@ -3,7 +3,7 @@
 A friendly crate-pushing puzzle game for kids, right in your terminal.
 
 Push every crate onto a marked spot. That's the whole game — but it gets
-cleverer as you go. **91 puzzles** from the classic *Microban* set, starting
+cleverer as you go. **217 puzzles** from the classic *Microban* sets, starting
 with one you can solve in a single move.
 
 ```bash
@@ -51,28 +51,48 @@ if anyone drops a puzzle into a pack where the curve would dip.
 
 ## The puzzles
 
-The puzzles are **Microban**, by **David W. Skinner** — 155 small Sokoban
-puzzles released in 2000, each one built around a single idea, and recommended
-by their author as a good set for beginners and for children.
+The puzzles are **Microban**, by **David W. Skinner** — small Sokoban puzzles,
+each one built around a single idea, and recommended by their author as
+"good for beginners and children".
 
 > These sets may be freely distributed provided they remain properly credited.
 > — David W. Skinner
 
 Source: <http://www.abelmartin.com/rj/sokobanJS/Skinner/David%20W.%20Skinner%20-%20Sokoban.htm>
 
-This game ships the 91 of them that fit a terminal window, use at most four
-crates, and can be solved in at most forty pushes — selected, verified and
-sorted by difficulty with the solver in `tools/`. Full credit, and the licence
-terms, are in `levels/microban1/CREDITS.md`.
+Skinner wrote four Microban sets between 2000 and 2010. This game draws on three
+of them:
+
+| Set | Released | Puzzles | Shipped here |
+|---|---|---|---|
+| **Microban** | April 2000 | 155 | 93 |
+| **Microban II** | April 2002 | 135 | 63 |
+| **Microban III** | December 2009 | 101 | 61 |
+
+Those are the ones that fit a terminal window, use at most four crates, and can
+be solved in at most forty pushes — selected, verified and sorted by difficulty
+with the solver in `tools/`. Microban IV is left out on the same measurement:
+it is largely the alphabet series, big boards spelling out letters, and only 18
+of its 102 puzzles clear those bars.
+
+Full credit, and the licence terms, are in `levels/pack1/CREDITS.md`.
 
 **The MIT licence in this repository covers the game's code. It does not cover
 the puzzles**, which remain David W. Skinner's work.
 
-| Pack | Puzzles | What it's for |
-|---|---|---|
-| **Warming Up** | 30 | One to four crates. A single push, rising to about twenty. |
-| **Getting Tricky** | 31 | Where you start having to plan the order you push things in. |
-| **Proper Puzzles** | 30 | Up to forty pushes, for when they've got the hang of it. |
+The three sets are not shipped as three packs. All 217 puzzles are sorted into
+one measured difficulty curve and cut into seven packs of 31, so each pack draws
+from whichever sets belong at that point in the climb:
+
+| Pack | Crates | Pushes | What it's for |
+|---|---|---|---|
+| **Warming Up** | 1–3 | 1–18 | A single push, rising to about twenty. |
+| **Finding Your Feet** | 2–3 | 7–27 | Still small, but you have to look first. |
+| **Getting Tricky** | 2–4 | 6–32 | Where you start planning the order you push things in. |
+| **Think It Through** | 2–4 | 7–36 | One wrong first push and you undo a lot. |
+| **Proper Puzzles** | 3–4 | 8–37 | For when they've got the hang of it. |
+| **Head Scratchers** | 3–4 | 6–40 | Short ones that are anything but easy. |
+| **For Real Experts** | 3–4 | 16–40 | The hardest boards that still fit the rules above. |
 
 ## Graphics
 
@@ -162,6 +182,9 @@ npx boxman-jr --levels=./my-puzzles
 
 Adding puzzles never disturbs saved progress — records are keyed by a stable
 level id rather than by position, so you can insert a puzzle anywhere in a pack.
+A level that moves to a *different* pack keeps its record too: the game follows
+it by id on the next run, which is what lets the difficulty packs be re-cut when
+new puzzles arrive.
 
 ## Development
 
@@ -181,13 +204,22 @@ npm run build && node dist/main.js
 
 The limits live in `tools/difficulty.ts`, read by both the test suite and the
 importer, so a puzzle can only ship if it meets the bar the importer was
-filtering for. To rebuild the packs from the Microban collection in
-`tools/data/` — solving, rating and re-sorting every puzzle:
+filtering for. One test goes further and re-derives the whole selection from
+`tools/data/`, failing if what is on disk is not what the importer would write —
+hand-editing a pack is fine, but only if the importer agrees.
+
+To rebuild the packs from the Microban collections in `tools/data/` — solving,
+rating and re-sorting every puzzle:
 
 ```bash
 npx tsc -p tsconfig.test.json
-node dist-test/tools/import-microban.js --dry-run
+node dist-test/tools/import-microban.js --dry-run   # then without --dry-run
 ```
+
+Adding a fourth set is a row in `COLLECTIONS` at the top of
+`tools/import-microban.ts`, plus a kid-friendly title for each puzzle that
+survives the gates. The importer lists the ones still needing a name, with their
+boards, and refuses to write a pack containing an untitled level.
 
 ## Licence
 
@@ -195,9 +227,9 @@ The **code** is MIT — see [LICENSE](LICENSE).
 
 The **puzzles** are not. They are *Microban* by **David W. Skinner**, included
 here under his terms: "These sets may be freely distributed provided they remain
-properly credited." Every level file names the puzzle it came from, and
-[`levels/microban1/CREDITS.md`](levels/microban1/CREDITS.md) carries the full
-credit. If you fork this, keep it.
+properly credited." Every level file names the set and puzzle it came from, and
+[`levels/pack1/CREDITS.md`](levels/pack1/CREDITS.md) carries the full credit
+(every pack ships a copy). If you fork this, keep it.
 
 This is a Sokoban-style puzzle game — an independent implementation of the
 box-pushing genre, not affiliated with or endorsed by any other publisher.

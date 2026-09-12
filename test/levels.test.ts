@@ -13,7 +13,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { flatten, loadPacks } from '../src/io/packs.js';
 import { solve, type SolveResult } from '../tools/solver.js';
-import { fingerprint } from '../tools/import-microban.js';
+import {
+  fingerprint,
+  levelId,
+  readCollections,
+  select,
+  split,
+} from '../tools/import-microban.js';
 import {
   BUDGET_COLS,
   BUDGET_ROWS,
@@ -65,6 +71,32 @@ describe('shipped levels', () => {
         seen.add(level.id);
       }
     }
+  });
+
+  /**
+   * Ids must be unique across ALL packs, not just within one.
+   *
+   * Progress is keyed by (packId, levelId), but `reconcile` follows a level's
+   * record between packs by level id alone - it is the durable identity of a
+   * puzzle. Two puzzles sharing one id would therefore swap stars as the tiers
+   * get re-cut. The risk arrived with the second and third Microban sets, whose
+   * numbering starts again at 1; the `m2-`/`m3-` id prefixes are what keep them
+   * apart, and this is the test that says so.
+   */
+  test('level ids are unique across every pack', () => {
+    const seen = new Map<string, string>();
+    const clashes: string[] = [];
+
+    for (const ref of refs) {
+      const previous = seen.get(ref.level.id);
+      if (previous !== undefined) {
+        clashes.push(`${ref.pack.manifest.id}/${ref.level.id} clashes with ${previous}`);
+      } else {
+        seen.set(ref.level.id, `${ref.pack.manifest.id}/${ref.level.id}`);
+      }
+    }
+
+    assert.deepEqual(clashes, [], `\n${clashes.join('\n')}\n`);
   });
 
   /**
@@ -274,6 +306,36 @@ describe('shipped levels', () => {
         }
       }
     }
+
+    assert.deepEqual(failures, [], `\n${failures.join('\n')}\n`);
+  });
+
+  /**
+   * The shipped packs must be exactly what the importer produces.
+   *
+   * Everything above checks the levels on disk against the rules. This checks
+   * them against the CODE that is supposed to have put them there, which is a
+   * different question and catches a different bug: before the second and third
+   * Microban sets were added, `select` returned 93 levels and the packs held 91,
+   * because two had been dropped by hand and nothing noticed for the life of the
+   * project. A hand-edited pack.json is not a sin - but it has to be a change
+   * the importer would make too, or the next re-import silently reverts it.
+   */
+  test('the packs on disk are what the importer produces', { timeout: 180_000 }, () => {
+    const expected = split(select(readCollections()));
+
+    assert.equal(packs.length, expected.length, 'wrong number of packs');
+
+    const failures: string[] = [];
+    packs.forEach((pack, i) => {
+      const want = expected[i].map((r) => levelId(r.raw));
+      const got = pack.levels.map((l) => l.id);
+      if (want.join(',') !== got.join(',')) {
+        failures.push(
+          `${pack.manifest.id}:\n  on disk:  ${got.join(' ')}\n  importer: ${want.join(' ')}`,
+        );
+      }
+    });
 
     assert.deepEqual(failures, [], `\n${failures.join('\n')}\n`);
   });
